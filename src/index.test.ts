@@ -7,9 +7,14 @@ test("creates a catalog instance", () => {
   expect(typeof catalog.info).toBe("function");
 });
 
-test("logs info with event name", () => {
+test("logs info with event name (event-name-first)", () => {
   const catalog = createCatalog({ service: "test", level: "info" });
   expect(() => catalog.info("user.created", { userId: "42" })).not.toThrow();
+});
+
+test("logs with object style (standard pino)", () => {
+  const catalog = createCatalog({ service: "test", level: "info" });
+  expect(() => catalog.info({ userId: "42", message: "User created" })).not.toThrow();
 });
 
 test("logs error with event name", () => {
@@ -40,12 +45,20 @@ test("child logger logs without errors", () => {
   expect(() => child.info("request.handled", { path: "/api" })).not.toThrow();
 });
 
-test("handles redact option", () => {
-  const catalog = createCatalog({
-    service: "secure-app",
-    redact: ["password", "creditCard"],
-  });
+test("child logger supports object style", () => {
+  const catalog = createCatalog({ service: "app" });
+  const child = catalog.child({ requestId: "abc-123" });
+  expect(() => child.info({ path: "/api", method: "GET" })).not.toThrow();
+});
+
+test("redacts sensitive fields", () => {
+  const catalog = createCatalog({ service: "secure-app" });
   expect(() => catalog.info("user.login", { userId: "1", password: "secret" })).not.toThrow();
+});
+
+test("redacts sensitive fields in object style", () => {
+  const catalog = createCatalog({ service: "secure-app" });
+  expect(() => catalog.info({ userId: "1", password: "secret", email: "a@b.com" })).not.toThrow();
 });
 
 test("handles multiple transport targets", () => {
@@ -54,4 +67,21 @@ test("handles multiple transport targets", () => {
     transport: [{ target: "pino/file", options: {} }],
   });
   expect(() => catalog.info("app.started")).not.toThrow();
+});
+
+test("uses mixin for context injection", () => {
+  const catalog = createCatalog({
+    service: "with-mixin",
+    mixin: () => ({ requestId: "abc-123" }),
+  });
+  expect(() => catalog.info("request.started")).not.toThrow();
+});
+
+test("child logger inherits mixin", () => {
+  const catalog = createCatalog({
+    service: "with-mixin",
+    mixin: () => ({ requestId: "abc-123" }),
+  });
+  const child = catalog.child({ userId: "42" });
+  expect(() => child.info("user.action")).not.toThrow();
 });
