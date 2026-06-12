@@ -1,7 +1,7 @@
-# @remba/catalog
+# @joinremba/catalog
 
-[![npm version](https://img.shields.io/npm/v/@remba/catalog)](https://www.npmjs.com/package/@remba/catalog)
-[![Licence](https://img.shields.io/npm/l/@remba/catalog)](LICENSE)
+[![npm version](https://img.shields.io/npm/v/@joinremba/catalog)](https://www.npmjs.com/package/@joinremba/catalog)
+[![Licence](https://img.shields.io/npm/l/@joinremba/catalog)](LICENSE)
 [![CI](https://github.com/joinremba/catalog/actions/workflows/ci.yml/badge.svg)](https://github.com/joinremba/catalog/actions/workflows/ci.yml)
 [![Bun](https://img.shields.io/badge/bun-1.3%2B-%23ffc83d?logo=bun)](https://bun.sh)
 
@@ -22,16 +22,16 @@ Catalog is a production-ready logging and error event layer for TypeScript backe
 ## Installation
 
 ```sh
-bun add @remba/catalog
+bun add @joinremba/catalog
 ```
 
 ## Quick Start
 
 ```ts
-import { createCatalog } from "@remba/catalog";
+import { createCatalog } from "@joinremba/catalog";
 
 const catalog = createCatalog({
-  service: "remba-api",
+  service: "@joinremba/api",
   environment: process.env.NODE_ENV,
   redact: ["authorization", "password", "bvn", "nin"],
 });
@@ -134,7 +134,7 @@ try {
 For API backends, Catalog provides helpers to build safe error responses without leaking internals:
 
 ```ts
-import { safeError } from "@remba/catalog";
+import { safeError } from "@joinremba/catalog";
 
 app.onError((err, c) => {
   catalog.error("request.error", { error: err });
@@ -149,8 +149,8 @@ app.onError((err, c) => {
 Automatically generates or extracts a request ID and binds it to all logs within a request:
 
 ```ts
-import { requestId } from "@remba/catalog";
-import { createCatalog } from "@remba/catalog";
+import { requestId } from "@joinremba/catalog";
+import { createCatalog } from "@joinremba/catalog";
 
 const catalog = createCatalog({ service: "my-api" });
 
@@ -168,7 +168,7 @@ app.use((req, res, next) => {
 Automatically log incoming requests and responses:
 
 ```ts
-import { httpLogger } from "@remba/catalog";
+import { httpLogger } from "@joinremba/catalog";
 
 // Express
 app.use(httpLogger({ catalog, excludePaths: ["/health"] }));
@@ -180,13 +180,13 @@ Catalog is framework-agnostic but ships with adapters for popular frameworks:
 
 ```ts
 // Express
-import { expressAdapter } from "@remba/catalog/adapters/express";
+import { expressAdapter } from "@joinremba/catalog/adapters/express";
 
 // Hono
-import { honoAdapter } from "@remba/catalog/adapters/hono";
+import { honoAdapter } from "@joinremba/catalog/adapters/hono";
 
 // Fastify
-import { fastifyAdapter } from "@remba/catalog/adapters/fastify";
+import { fastifyAdapter } from "@joinremba/catalog/adapters/fastify";
 ```
 
 Adapters automatically configure request ID tracking, error serialization, and HTTP logging for the target framework.
@@ -194,7 +194,7 @@ Adapters automatically configure request ID tracking, error serialization, and H
 ## TypeScript Types
 
 ```ts
-import type { Catalog, LogLevel, CatalogOptions, TransportOptions } from "@remba/catalog";
+import type { Catalog, LogLevel, CatalogOptions, TransportOptions } from "@joinremba/catalog";
 ```
 
 | Type               | Description                                                            |
@@ -209,7 +209,7 @@ import type { Catalog, LogLevel, CatalogOptions, TransportOptions } from "@remba
 ### Basic usage
 
 ```ts
-import { createCatalog } from "@remba/catalog";
+import { createCatalog } from "@joinremba/catalog";
 
 const catalog = createCatalog({ service: "my-service" });
 
@@ -220,7 +220,7 @@ catalog.debug("config.loaded", { port: 3000 });
 ### With request context
 
 ```ts
-import { createCatalog } from "@remba/catalog";
+import { createCatalog } from "@joinremba/catalog";
 
 const catalog = createCatalog({ service: "web-app" });
 
@@ -286,8 +286,8 @@ const catalog = createCatalog({
 
 ## Related Packages
 
-- [@remba/beacon](https://github.com/joinremba/beacon) — Environment validation, config, secrets, and feature gates.
-- [@remba/gate](https://github.com/joinremba/gate) — API safety layer: validation, responses, idempotency, rate limiting, and API keys.
+- [@joinremba/beacon](https://github.com/joinremba/beacon) — Environment validation, config, secrets, and feature gates.
+- [@joinremba/gate](https://github.com/joinremba/gate) — API safety layer: validation, responses, idempotency, rate limiting, and API keys.
 
 ## Contributing
 

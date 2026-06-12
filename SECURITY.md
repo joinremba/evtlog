@@ -2,7 +2,7 @@
 
 ## Reporting a Vulnerability
 
-If you discover a security vulnerability in `@remba/catalog`, please report it by emailing **bensxnisaac@gmail.com**. Do not open a public issue for security-related reports.
+If you discover a security vulnerability in `@joinremba/catalog`, please report it by emailing **bensxnisaac@gmail.com**. Do not open a public issue for security-related reports.
 
 You can also report vulnerabilities privately through the GitHub Security Advisory tab at https://github.com/joinremba/catalog/security/advisories.
 
@@ -10,7 +10,7 @@ We aim to acknowledge receipt of your report within 48 hours and provide a timel
 
 ## Supported Versions
 
-Only the latest published version of `@remba/catalog` receives security updates. We do not backport fixes to older versions. Please ensure you are always using the most recent release.
+Only the latest published version of `@joinremba/catalog` receives security updates. We do not backport fixes to older versions. Please ensure you are always using the most recent release.
 
 ## Security Best Practices
 
@@ -31,7 +31,7 @@ const log = createLogger({
 
 ### Keep dependencies updated
 
-Regularly update `pino` and `@remba/catalog` to the latest versions to receive security patches. Use `bun update` to check for updates.
+Regularly update `pino` and `@joinremba/catalog` to the latest versions to receive security patches. Use `bun update` to check for updates.
 
 ### Review log output in production
 

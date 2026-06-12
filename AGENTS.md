@@ -1,4 +1,4 @@
-# @remba/catalog
+# @joinremba/catalog
 
 Production-ready logging and error event layer for TypeScript backends, built on Pino.
 
@@ -42,9 +42,9 @@ Production-ready logging and error event layer for TypeScript backends, built on
 
 ## Config Reference
 
-| Field        | Value            |
-| ------------ | ---------------- |
-| Package name | `@remba/catalog` |
-| Licence      | MIT              |
-| Engine       | `bun >=1.3.1`    |
-| Runtime deps | pino, pino-roll  |
+| Field        | Value                |
+| ------------ | -------------------- |
+| Package name | `@joinremba/catalog` |
+| Licence      | MIT                  |
+| Engine       | `bun >=1.3.1`        |
+| Runtime deps | pino, pino-roll      |

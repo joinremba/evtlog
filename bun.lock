@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "@remba/catalog",
+      "name": "@joinremba/catalog",
       "dependencies": {
         "pino": "^10.3.1",
         "pino-roll": "^4.0.0",

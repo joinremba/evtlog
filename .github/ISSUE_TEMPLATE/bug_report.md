@@ -20,7 +20,7 @@ Steps to reproduce the behaviour:
 
 ```ts
 // Code snippet that reproduces the issue
-import { createLogger } from "@remba/catalog";
+import { createLogger } from "@joinremba/catalog";
 
 const log = createLogger({ ... });
 log.info({ ... });

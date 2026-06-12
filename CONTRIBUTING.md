@@ -1,6 +1,6 @@
-# Contributing to @remba/catalog
+# Contributing to @joinremba/catalog
 
-Thank you for your interest in contributing to `@remba/catalog`! We welcome contributions from everyone, whether it is a bug report, feature suggestion, or a pull request.
+Thank you for your interest in contributing to `@joinremba/catalog`! We welcome contributions from everyone, whether it is a bug report, feature suggestion, or a pull request.
 
 ## Code of Conduct
 
