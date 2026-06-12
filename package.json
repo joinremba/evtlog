@@ -1,6 +1,6 @@
 {
   "name": "@joinremba/catalog",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Production-ready logging and error event layer for TypeScript backends, built on Pino.",
   "type": "module",
   "main": "./src/index.ts",
@@ -25,6 +25,31 @@
       "types": "./src/adapters/hono.ts",
       "import": "./src/adapters/hono.ts",
       "default": "./src/adapters/hono.ts"
+    },
+    "./adapters/express": {
+      "types": "./src/adapters/express.ts",
+      "import": "./src/adapters/express.ts",
+      "default": "./src/adapters/express.ts"
+    },
+    "./adapters/fastify": {
+      "types": "./src/adapters/fastify.ts",
+      "import": "./src/adapters/fastify.ts",
+      "default": "./src/adapters/fastify.ts"
+    },
+    "./webhook": {
+      "types": "./src/webhook.ts",
+      "import": "./src/webhook.ts",
+      "default": "./src/webhook.ts"
+    },
+    "./otel": {
+      "types": "./src/otel.ts",
+      "import": "./src/otel.ts",
+      "default": "./src/otel.ts"
+    },
+    "./sampling": {
+      "types": "./src/sampling.ts",
+      "import": "./src/sampling.ts",
+      "default": "./src/sampling.ts"
     }
   },
   "files": [

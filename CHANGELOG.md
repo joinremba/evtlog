@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] — 2026-06-12
+
 ### Added
 
 - Security event logging (`catalog/security`) — structured security events with severity levels
@@ -21,6 +23,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `mixin()` option for context injection
 - `redactPaths` for Pino path-based redaction
 - Environment-aware configuration (pretty in dev, JSON in prod)
+
+## [0.3.0] — 2026-06-12
+
+### Added
+
+- Webhook event module (`catalog/webhook`) — batch-sends log events to webhook endpoints with configurable targets, level filtering, retry, and HMAC signing
+- Express adapter (`catalog/adapters/express`) — `requestIdMiddleware` and `httpLoggerMiddleware`
+- Fastify adapter (`catalog/adapters/fastify`) — `requestIdHook` and `httpLoggerHook`
+- OpenTelemetry bridge (`catalog/otel`) — injects `trace_id` and `span_id` from active span into log entries, optional span events
+- Log sampling (`catalog/sampling`) — deterministic sampling via hash-based sampler, level-based filtering
+- Package exports for all new sub-modules
 
 ## [0.2.0] — 2026-06-12
 
