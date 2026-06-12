@@ -4,43 +4,47 @@ Production-ready logging and error event layer for TypeScript backends, built on
 
 ## Commands
 
-| Command             | Description                                         |
-| ------------------- | --------------------------------------------------- |
-| `bun test`          | Run tests                                           |
-| `bun run typecheck` | TypeScript type checking (`tsc --noEmit`)           |
-| `bun run lint`      | ESLint                                              |
-| `bun run format`    | Prettier formatting                                 |
-| `bun run check`     | All checks (lint + format:check + typecheck + test) |
-| `bun run build`     | Build to `dist/`                                    |
+| Command             | Description                            |
+| ------------------- | -------------------------------------- |
+| `bun test`          | Run tests                              |
+| `bun run typecheck` | `tsc --noEmit`                         |
+| `bun run lint`      | ESLint                                 |
+| `bun run format`    | Prettier                               |
+| `bun run check`     | lint + format:check + typecheck + test |
+| `bun run build`     | Build to `dist/`                       |
 
 ## Stack
 
-- TypeScript 6 (strict), Bun runtime, Pino
+- TypeScript 6 (strict), Bun runtime
+- Pino ^10.3.1 (runtime), pino-roll ^4.0.0 (runtime), pino-pretty ^13.1.3 (dev)
 - ESLint 8 + Prettier for code quality
-- `bun:test` for testing (no third-party test framework)
 
-## Key Patterns
+## Key API
 
-- All source code lives in `src/`.
-- Tests are colocated with source files as `*.test.ts` (e.g. `src/index.test.ts`).
-- Built on top of **Pino** (`pino` runtime dependency) with optional `pino-pretty` for development.
-- Focus on production logging patterns: structured JSON, redaction, multi-transport, request context correlation.
-- No `any` types in source code (enforced by ESLint rule `@typescript-eslint/no-explicit-any: error`).
-- Use `bun` for all package management and script execution — never `npm`, `npx`, or `yarn`.
+- `createCatalog(options)` — Main export. Returns a Catalog instance.
+- `catalog.info("event.name", { data })` — Event-name-first logging.
+- `catalog.child({ requestId })` — Creates child logger with bound context.
+- `catalog.level` — Current log level.
+
+## Patterns
+
+- All source in `src/`
+- Tests colocated with source: `src/*.test.ts`
+- Event-name-first API wraps Pino internally
+- Redaction via Pino's built-in path-based redact
+- `pino-roll` for production rolling file transport
 
 ## npm Publishing
 
-- `package.json` is preconfigured with `"publishConfig": { "access": "public" }`.
-- CI publishes to npm automatically when a `v*` tag is pushed (see `.github/workflows/publish.yml`).
-- Publishing uses `npm publish --provenance` for attestation.
-- An `NPM_TOKEN` secret must be configured in the GitHub repository settings.
+- `publishConfig.access: public`
+- CI publishes on `v*` tags via `npm publish --provenance`
+- `NPM_TOKEN` secret required in GitHub
 
 ## Config Reference
 
-| Field                | Value                                                           |
-| -------------------- | --------------------------------------------------------------- |
-| Runtime dependencies | `pino` (required), `pino-pretty` (optional, dev)                |
-| Licence              | MIT                                                             |
-| Engines              | `bun >= 1.3.1`                                                  |
-| Test runner          | `bun:test` (built-in)                                           |
-| TypeScript           | Strict mode, `verbatimModuleSyntax`, `noUncheckedIndexedAccess` |
+| Field        | Value            |
+| ------------ | ---------------- |
+| Package name | `@remba/catalog` |
+| Licence      | MIT              |
+| Engine       | `bun >=1.3.1`    |
+| Runtime deps | pino, pino-roll  |
