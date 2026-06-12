@@ -37,8 +37,8 @@ Production-ready logging and error event layer for TypeScript backends, built on
 ## npm Publishing
 
 - `publishConfig.access: public`
-- CI publishes on `v*` tags via `npm publish --provenance`
-- `NPM_TOKEN` secret required in GitHub
+- Published manually via `bun publish` (2FA required)
+- Tag and push after publishing
 
 ## Config Reference
 
