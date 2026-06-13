@@ -59,7 +59,7 @@ export function httpLoggerMiddleware(catalog: Catalog, options?: HttpLogOptions)
     });
 
     res.on("finish", () => {
-      const duration = ((performance.now() - start) * 1000).toFixed(2);
+      const duration = (performance.now() - start).toFixed(2);
       const status = res.statusCode;
       const level = status >= 500 ? "error" : status >= 400 ? "warn" : "info";
 

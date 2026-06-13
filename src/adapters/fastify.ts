@@ -59,7 +59,7 @@ export function httpLoggerHook(catalog: Catalog, options?: HttpLogOptions) {
 
     // Capture duration when reply is sent (Fastify calls onResponse after send)
     queueMicrotask(() => {
-      const duration = ((performance.now() - start) * 1000).toFixed(2);
+      const duration = (performance.now() - start).toFixed(2);
       const status = reply.statusCode;
       const level = status >= 500 ? "error" : status >= 400 ? "warn" : "info";
 

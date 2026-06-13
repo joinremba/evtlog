@@ -52,13 +52,36 @@ test("child logger supports object style", () => {
 });
 
 test("redacts sensitive fields", () => {
-  const catalog = createCatalog({ service: "secure-app" });
-  expect(() => catalog.info("user.login", { userId: "1", password: "secret" })).not.toThrow();
+  const lines: Record<string, unknown>[] = [];
+  const catalog = createCatalog({
+    service: "secure-app",
+    destination: {
+      write(data) {
+        lines.push(JSON.parse(data.toString()) as Record<string, unknown>);
+      },
+    },
+  });
+  catalog.info("user.login", { userId: "1", password: "secret" });
+  const entry = lines[0]!;
+  expect(entry.password).toBe("[REDACTED]");
+  expect(entry.userId).toBe("1");
 });
 
 test("redacts sensitive fields in object style", () => {
-  const catalog = createCatalog({ service: "secure-app" });
-  expect(() => catalog.info({ userId: "1", password: "secret", email: "a@b.com" })).not.toThrow();
+  const lines: Record<string, unknown>[] = [];
+  const catalog = createCatalog({
+    service: "secure-app",
+    destination: {
+      write(data) {
+        lines.push(JSON.parse(data.toString()) as Record<string, unknown>);
+      },
+    },
+  });
+  catalog.info({ userId: "1", password: "secret", email: "a@b.com" });
+  const entry = lines[0]!;
+  expect(entry.password).toBe("[REDACTED]");
+  expect(entry.email).toBe("[REDACTED]");
+  expect(entry.userId).toBe("1");
 });
 
 test("handles multiple transport targets", () => {

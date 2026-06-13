@@ -8,12 +8,17 @@ export interface TransportOptions {
   options?: Record<string, unknown>;
 }
 
+export interface PinoDestination {
+  write: (data: string | Uint8Array) => void;
+}
+
 export interface CatalogOptions {
   service: string;
   level?: LogLevel;
   redact?: string[];
   redactPaths?: string[];
   transport?: TransportOptions | TransportOptions[];
+  destination?: PinoDestination;
   mixin?: () => Record<string, unknown>;
   base?: Record<string, unknown>;
   environment?: string;
@@ -115,7 +120,7 @@ const serializer: LoggerOptions["serializers"] = {
 };
 
 export function createCatalog(options: CatalogOptions): Catalog {
-  const { service, level, redact, redactPaths, transport, mixin, base } = options;
+  const { service, level, redact, redactPaths, transport, mixin, base, destination } = options;
   const extraRedactFields = redact ? new Set(redact) : undefined;
 
   const pinoOptions: LoggerOptions = {
@@ -131,7 +136,9 @@ export function createCatalog(options: CatalogOptions): Catalog {
 
   let logger: PinoLogger;
 
-  if (transport) {
+  if (destination) {
+    logger = pino(pinoOptions, destination as unknown as pino.DestinationStream);
+  } else if (transport) {
     const transports = Array.isArray(transport) ? transport : [transport];
     const targets = transports.map((t) => ({
       target: t.target,
