@@ -1,5 +1,6 @@
 import pino from "pino";
 import type { Logger as PinoLogger, Level as PinoLevel, LoggerOptions } from "pino";
+import type { Client, LogEvent } from "@joinremba/core";
 
 export type LogLevel = PinoLevel;
 
@@ -22,6 +23,7 @@ export interface CatalogOptions {
   mixin?: () => Record<string, unknown>;
   base?: Record<string, unknown>;
   environment?: string;
+  client?: Client;
 }
 
 export interface Catalog {
@@ -120,8 +122,18 @@ const serializer: LoggerOptions["serializers"] = {
 };
 
 export function createCatalog(options: CatalogOptions): Catalog {
-  const { service, level, redact, redactPaths, transport, mixin, base, destination, environment } =
-    options;
+  const {
+    service,
+    level,
+    redact,
+    redactPaths,
+    transport,
+    mixin,
+    base,
+    destination,
+    environment,
+    client,
+  } = options;
   const extraRedactFields = redact ? new Set(redact) : undefined;
 
   const mergedBase = { ...base, ...(environment ? { environment } : {}) };
@@ -152,17 +164,43 @@ export function createCatalog(options: CatalogOptions): Catalog {
     logger = pino(pinoOptions);
   }
 
+  const FLUSH_THRESHOLD = 100;
+  const buffer: LogEvent[] = [];
+
+  function flush(): void {
+    if (!client || buffer.length === 0) return;
+    const batch = buffer.splice(0);
+    client.ingestLogs(batch).catch(() => {
+      // NetworkError or any error: silently drop — local logs are already written
+    });
+  }
+
+  function enqueue(method: string, message: string, data?: Record<string, unknown>): void {
+    if (!client) return;
+    buffer.push({ timestamp: new Date().toISOString(), level: method, service, message, data });
+    if (buffer.length >= FLUSH_THRESHOLD) {
+      flush();
+    }
+  }
+
+  if (client) {
+    process.on("beforeExit", flush);
+  }
+
   const buildChild = (parentLogger: PinoLogger): Catalog => {
     const childAdapt = (method: PinoLevel) => {
       return (first: string | Record<string, unknown>, second?: Record<string, unknown>) => {
         if (typeof first === "string") {
           if (second) {
             parentLogger[method](redactFields(second, extraRedactFields), first);
+            enqueue(method, first, second);
           } else {
             parentLogger[method](first);
+            enqueue(method, first);
           }
         } else {
           parentLogger[method](redactFields(first, extraRedactFields));
+          enqueue(method, "", first);
         }
       };
     };
