@@ -180,13 +180,13 @@ Catalog is framework-agnostic but ships with adapters for popular frameworks:
 
 ```ts
 // Express
-import { expressAdapter } from "@joinremba/catalog/adapters/express";
+import { requestIdMiddleware, httpLoggerMiddleware } from "@joinremba/catalog/adapters/express";
 
 // Hono
-import { honoAdapter } from "@joinremba/catalog/adapters/hono";
+import { requestIdMiddleware, httpLoggerMiddleware } from "@joinremba/catalog/adapters/hono";
 
 // Fastify
-import { fastifyAdapter } from "@joinremba/catalog/adapters/fastify";
+import { requestIdHook, httpLoggerHook } from "@joinremba/catalog/adapters/fastify";
 ```
 
 Adapters automatically configure request ID tracking, error serialization, and HTTP logging for the target framework.

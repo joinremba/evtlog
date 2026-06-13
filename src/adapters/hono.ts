@@ -31,8 +31,6 @@ export function requestIdMiddleware(catalog: Catalog, options?: HonoRequestIdOpt
 
 export interface HttpLogOptions {
   excludePaths?: string[];
-  logBody?: boolean;
-  maxBodyLength?: number;
 }
 
 export function httpLoggerMiddleware(catalog: Catalog, options?: HttpLogOptions) {

@@ -40,6 +40,7 @@ export function webhookLogger(catalog: Catalog, options: WebhookOptions) {
   const { targets, batchIntervalMs = 5000, maxBatchSize = 50, retryCount = 2 } = options;
   const queues: Map<string, QueuedEvent[]> = new Map();
   const timers: Map<string, ReturnType<typeof setInterval>> = new Map();
+  const flushing = new Set<string>();
 
   for (const target of targets) {
     queues.set(target.url, []);
@@ -48,28 +49,46 @@ export function webhookLogger(catalog: Catalog, options: WebhookOptions) {
   }
 
   async function flush(target: WebhookTarget) {
-    const queue = queues.get(target.url);
-    if (!queue || queue.length === 0) return;
+    if (flushing.has(target.url)) return;
+    flushing.add(target.url);
 
-    const batch = queue.splice(0, maxBatchSize);
-    const body = JSON.stringify({ events: batch });
-    const headers: Record<string, string> = {
-      "Content-Type": "application/json",
-      ...target.headers,
-    };
+    try {
+      const queue = queues.get(target.url);
+      if (!queue || queue.length === 0) return;
 
-    if (target.secret) {
-      headers["X-Signature-256"] = await signPayload(body, target.secret);
-    }
+      const batch = queue.splice(0, maxBatchSize);
+      const body = JSON.stringify({ events: batch });
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+        ...target.headers,
+      };
 
-    for (let attempt = 0; attempt <= retryCount; attempt++) {
-      try {
-        const res = await fetch(target.url, { method: "POST", headers, body });
-        if (res.ok) break;
-        if (attempt < retryCount) await new Promise((r) => setTimeout(r, 1000 * (attempt + 1)));
-      } catch {
-        if (attempt < retryCount) await new Promise((r) => setTimeout(r, 1000 * (attempt + 1)));
+      if (target.secret) {
+        headers["X-Signature-256"] = await signPayload(body, target.secret);
       }
+
+      let delivered = false;
+      for (let attempt = 0; attempt <= retryCount; attempt++) {
+        try {
+          const res = await fetch(target.url, { method: "POST", headers, body });
+          if (res.ok) {
+            delivered = true;
+            break;
+          }
+          if (attempt < retryCount) await new Promise((r) => setTimeout(r, 1000 * (attempt + 1)));
+        } catch {
+          if (attempt < retryCount) await new Promise((r) => setTimeout(r, 1000 * (attempt + 1)));
+        }
+      }
+
+      if (!delivered) {
+        catalog.error("webhook.delivery_failed", {
+          url: target.url,
+          batchSize: batch.length,
+        });
+      }
+    } finally {
+      flushing.delete(target.url);
     }
   }
 
@@ -102,7 +121,6 @@ export function webhookLogger(catalog: Catalog, options: WebhookOptions) {
       clearInterval(timer);
       const target = targets.find((t) => t.url === url);
       if (target) {
-        clearInterval(timer);
         flush(target);
       }
     }

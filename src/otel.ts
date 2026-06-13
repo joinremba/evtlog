@@ -55,8 +55,16 @@ export function otelBridge(catalog: Catalog, options: OtelBridgeOptions) {
   function adapt(method: LogLevel) {
     return (first: string | Record<string, unknown>, second?: Record<string, unknown>) => {
       const { first: f, data: d } = withTraceContext(first, second);
-      const logFn = (catalog as unknown as Record<string, (...args: unknown[]) => void>)[method]!;
-      logFn(f, d);
+      if (typeof f === "string") {
+        (catalog[method] as (msg: string, data?: Record<string, unknown>) => void)(f, d);
+      } else if (d) {
+        (catalog[method] as (msg: string, data?: Record<string, unknown>) => void)("", {
+          ...f,
+          ...d,
+        });
+      } else {
+        (catalog[method] as (data: Record<string, unknown>) => void)(f);
+      }
     };
   }
 
@@ -69,6 +77,9 @@ export function otelBridge(catalog: Catalog, options: OtelBridgeOptions) {
     fatal: adapt("fatal"),
     child(bindings: Record<string, unknown>) {
       return otelBridge(catalog.child(bindings), options);
+    },
+    scope(name: string) {
+      return otelBridge(catalog.scope(name), options);
     },
     get level(): LogLevel {
       return catalog.level;

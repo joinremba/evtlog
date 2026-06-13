@@ -120,15 +120,17 @@ const serializer: LoggerOptions["serializers"] = {
 };
 
 export function createCatalog(options: CatalogOptions): Catalog {
-  const { service, level, redact, redactPaths, transport, mixin, base, destination } = options;
+  const { service, level, redact, redactPaths, transport, mixin, base, destination, environment } =
+    options;
   const extraRedactFields = redact ? new Set(redact) : undefined;
 
+  const mergedBase = { ...base, ...(environment ? { environment } : {}) };
   const pinoOptions: LoggerOptions = {
     name: service,
     level: level ?? "info",
     redact: redactPaths ? { paths: redactPaths, censor: "[REDACTED]" } : undefined,
     serializers: serializer,
-    ...(base && { base }),
+    ...(Object.keys(mergedBase).length > 0 && { base: mergedBase }),
     mixin() {
       return mixin ? mixin() : {};
     },
@@ -190,6 +192,17 @@ export function createCatalog(options: CatalogOptions): Catalog {
   const catalog: Catalog = buildChild(logger);
 
   return catalog;
+}
+
+export function safeError(error: unknown): Record<string, unknown> {
+  if (error instanceof Error) {
+    const err = error as Error & { statusCode?: unknown; code?: unknown };
+    const result: Record<string, unknown> = { message: err.message, name: err.name };
+    if (err.statusCode != null) result.statusCode = err.statusCode;
+    if (err.code != null) result.code = err.code;
+    return result;
+  }
+  return { message: String(error) };
 }
 
 export default createCatalog;

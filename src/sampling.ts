@@ -49,11 +49,10 @@ export function samplingCatalog(catalog: Catalog, options: SamplingOptions) {
 
       if (!shouldSample(method, message, data)) return;
 
-      const logFn = (catalog as unknown as Record<string, (...args: unknown[]) => void>)[method]!;
       if (typeof first === "string") {
-        logFn(first, second);
+        (catalog[method] as (msg: string, data?: Record<string, unknown>) => void)(first, second);
       } else {
-        logFn(first);
+        (catalog[method] as (data: Record<string, unknown>) => void)(first);
       }
     };
   }
@@ -67,6 +66,9 @@ export function samplingCatalog(catalog: Catalog, options: SamplingOptions) {
     fatal: adapt("fatal"),
     child(bindings: Record<string, unknown>) {
       return samplingCatalog(catalog.child(bindings), options);
+    },
+    scope(name: string) {
+      return samplingCatalog(catalog.scope(name), options);
     },
     get level(): LogLevel {
       return catalog.level;
