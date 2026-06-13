@@ -33,6 +33,10 @@ export interface Catalog {
   fatal(msg: string, data?: Record<string, unknown>): void;
   fatal(data: Record<string, unknown>): void;
   child(bindings: Record<string, unknown>): Catalog;
+  /** Create a scoped child logger bound to a module/package name.
+   *  Equivalent to `.child({ module: name })` — every log entry from the
+   *  returned logger includes `"module":"name"`. */
+  scope(name: string): Catalog;
   readonly level: LogLevel;
 }
 
@@ -164,6 +168,10 @@ export function createCatalog(options: CatalogOptions): Catalog {
 
       child(bindings: Record<string, unknown>): Catalog {
         return buildChild(parentLogger.child(bindings));
+      },
+
+      scope(name: string): Catalog {
+        return buildChild(parentLogger.child({ module: name }));
       },
 
       get level(): LogLevel {
