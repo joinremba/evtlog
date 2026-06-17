@@ -9,6 +9,16 @@ export interface TransportOptions {
   options?: Record<string, unknown>;
 }
 
+export interface TransportTarget {
+  target: string;
+  options?: Record<string, unknown>;
+  level?: string;
+}
+
+export interface TransportTargets {
+  targets: TransportTarget[];
+}
+
 export interface PinoDestination {
   write: (data: string | Uint8Array) => void;
 }
@@ -18,7 +28,7 @@ export interface CatalogOptions {
   level?: LogLevel;
   redact?: string[];
   redactPaths?: string[];
-  transport?: TransportOptions | TransportOptions[];
+  transport?: TransportOptions | TransportOptions[] | TransportTargets;
   destination?: PinoDestination;
   mixin?: () => Record<string, unknown>;
   base?: Record<string, unknown>;
@@ -153,11 +163,11 @@ export function createCatalog(options: CatalogOptions): Catalog {
   if (destination) {
     logger = pino(pinoOptions, destination as unknown as pino.DestinationStream);
   } else if (transport) {
-    const transports = Array.isArray(transport) ? transport : [transport];
-    const targets = transports.map((t) => ({
+    const list = "targets" in transport ? transport.targets : Array.isArray(transport) ? transport : [transport];
+    const targets = list.map((t) => ({
       target: t.target,
       options: t.options ?? {},
-      level: level ?? "info",
+      level: t.level ?? level ?? "info",
     }));
     logger = pino(pinoOptions, pino.transport({ targets }) as unknown as pino.DestinationStream);
   } else {

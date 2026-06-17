@@ -1,23 +1,27 @@
 # @joinremba/catalog
 
 [![npm version](https://img.shields.io/npm/v/@joinremba/catalog)](https://www.npmjs.com/package/@joinremba/catalog)
-[![Licence](https://img.shields.io/npm/l/@joinremba/catalog)](LICENSE)
+[![License](https://img.shields.io/npm/l/@joinremba/catalog)](LICENSE)
 [![CI](https://github.com/joinremba/catalog/actions/workflows/ci.yml/badge.svg)](https://github.com/joinremba/catalog/actions/workflows/ci.yml)
 [![Bun](https://img.shields.io/badge/bun-1.3%2B-%23ffc83d?logo=bun)](https://bun.sh)
 
-Catalog is a production-ready logging and error event layer for TypeScript backends, built on [Pino](https://getpino.io/).
+Production-ready logging and error event layer for TypeScript backends, built on [Pino](https://getpino.io/).
 
 ## Features
 
-- **Event-name-first API** — Log with descriptive event names: `catalog.info("wallet.created", { userId })`. Events are indexed, searchable, and consistent across your codebase.
-- **Pino-based** — Ultra-fast structured JSON logging with full Pino ecosystem support.
-- **Sensitive data redaction** — Automatically redacts PII, secrets, and credentials from log output via configurable path patterns.
-- **Multi-transport** — Route logs to console, file, rolling files, or external services based on environment.
-- **Request context** — Correlate logs with request IDs via child loggers.
-- **Error serializer** — Standardised error serialization for consistent error objects in logs.
-- **HTTP request logging** — Middleware for automatic request/response logging.
-- **Environment-aware** — Pretty printing in development, structured JSON and file rolling in production.
-- **Framework adapters** — Plug into Express, Hono, Fastify, or any Bun-native server.
+- **Event-name-first API** — `catalog.info("user.created", { userId })` for consistent, searchable log events.
+- **Pino under the hood** — Ultra-fast structured JSON logging with full Pino transport ecosystem.
+- **Automatic sensitive data redaction** — Built-in denylist of PII, secrets, and credentials (email, phone, SSN, API keys, tokens, etc.), plus configurable path patterns.
+- **Multi-transport** — Single transport or array of targets for console, file, rolling files (pino-roll), or external sinks.
+- **Child loggers** — `.child()` and `.scope()` for request-scoped and module-scoped context binding.
+- **Error serialization** — `safeError()` helper strips internals from `Error` objects for safe API responses.
+- **Framework adapters** — First-class support for Hono, Express, and Fastify.
+- **Audit & Security events** — Structured modules for audit trails and security event logging.
+- **Webhook forwarding** — Batch log delivery to external webhook endpoints with retry and HMAC signing.
+- **OpenTelemetry bridge** — Correlate logs with active span context.
+- **Log sampling** — Deterministic or custom sampling to control volume.
+- **Cloud log ingestion** — Optional `@joinremba/core` client for remote log batching.
+- **Strict TypeScript** — Full type exports for `Catalog`, `CatalogOptions`, `LogLevel`, and more.
 
 ## Installation
 
@@ -25,274 +29,376 @@ Catalog is a production-ready logging and error event layer for TypeScript backe
 bun add @joinremba/catalog
 ```
 
+Requires **Bun >= 1.3.1**.
+
 ## Quick Start
 
 ```ts
 import { createCatalog } from "@joinremba/catalog";
 
 const catalog = createCatalog({
-  service: "@joinremba/api",
-  environment: process.env.NODE_ENV,
-  redact: ["authorization", "password", "bvn", "nin"],
+  service: "my-api",
+  environment: process.env.NODE_ENV ?? "development",
+  level: "info",
 });
 
-catalog.info("wallet.created", { userId, walletId });
-catalog.error("payment.failed", { amount: 100, error: err.message });
+catalog.info("app.started", { port: 3000 });
+catalog.info("user.created", { userId: "usr_abc123" });
+catalog.error("payment.failed", { amount: 4999, currency: "USD" });
 ```
 
-## API Reference
+Output is newline-delimited JSON (NDJSON) written to stdout by default. Pipe through `pino-pretty` for dev:
 
-### `createCatalog(options)`
-
-Creates and returns a configured Catalog instance. It is the main entry point for the package.
-
-#### Options
-
-| Option        | Type                                     | Default               | Description                                            |
-| ------------- | ---------------------------------------- | --------------------- | ------------------------------------------------------ |
-| `service`     | `string`                                 | —                     | Application or service name, included in every log.    |
-| `environment` | `string`                                 | —                     | Environment name (e.g. `"production"`, `"staging"`).   |
-| `level`       | `LogLevel`                               | `"info"`              | Minimum log level.                                     |
-| `redact`      | `string[]`                               | —                     | Paths to redact (e.g. `["password", "creditCard.*"]`). |
-| `transport`   | `TransportOptions \| TransportOptions[]` | Pino default (stdout) | Single or array of transport configurations.           |
-
-#### Log Levels
-
-| Method               | Use                   |
-| -------------------- | --------------------- |
-| `catalog.trace(...)` | Trace-level logging   |
-| `catalog.debug(...)` | Debug-level logging   |
-| `catalog.info(...)`  | Informational logging |
-| `catalog.warn(...)`  | Warning logging       |
-| `catalog.error(...)` | Error logging         |
-| `catalog.fatal(...)` | Fatal logging         |
-
-Each method accepts an event name (string) and an optional data object:
-
-```ts
-catalog.info("user.signed-in", { userId: 42 });
-catalog.error("db.connection-failed", { err });
-catalog.info("app.started"); // event name only
+```sh
+bun run start | bunx pino-pretty
 ```
 
-### Child Loggers
+## Log Levels
 
-Create a child logger that inherits the parent's configuration and adds bound fields:
+| Level   | Method                 | Usage                              |
+| ------- | ---------------------- | ---------------------------------- |
+| `trace` | `catalog.trace(...)`   | Diagnostic detail during dev       |
+| `debug` | `catalog.debug(...)`   | Development debugging              |
+| `info`  | `catalog.info(...)`    | Normal operational events          |
+| `warn`  | `catalog.warn(...)`    | Unexpected but handled situations  |
+| `error` | `catalog.error(...)`   | Recoverable errors                 |
+| `fatal` | `catalog.fatal(...)`   | Unrecoverable failures             |
+
+Each method supports event-name-first, object-style, and event-only:
 
 ```ts
-const catalog = createCatalog({ service: "app" });
-const reqLog = catalog.child({ requestId: "abc-123" });
+catalog.info("user.created", { userId: "usr_abc123" }); // event-name-first
+catalog.info({ userId: "usr_abc123", message: "User created" }); // object-style
+catalog.info("app.started"); // event only
+```
 
+Set `level` to the minimum level to emit — events below it are dropped.
+
+## Child Loggers
+
+Use `.child()` to bind context that appears in every log entry:
+
+```ts
+const reqLog = catalog.child({ requestId: crypto.randomUUID() });
 reqLog.info("request.handled", { path: "/api/users" });
-// Includes requestId: "abc-123" in every log
+// Includes "requestId": "uuid-..."
 ```
 
-### Redaction
+Use `.scope(name)` for module-scoped logging:
 
-Sensitive data is automatically redacted from log output. Configure paths using dot notation:
+```ts
+const dbLog = catalog.scope("database");
+dbLog.warn("query.slow", { query: "SELECT ..." });
+// Includes "module": "database"
+```
+
+Child loggers inherit all parent options (redaction, mixin, transport, etc.).
+
+## Transport
+
+### Single Transport
 
 ```ts
 const catalog = createCatalog({
-  service: "secure-app",
-  redact: ["password", "creditCard.number", "ssn", "authorization"],
+  service: "my-app",
+  transport: {
+    target: "pino/file",
+    options: { destination: "./logs/app.log", mkdir: true },
+  },
 });
-
-catalog.info("user.login", { userId: 42, password: "secret" });
-// password is redacted as [REDACTED]
 ```
 
-### Multi-transport
-
-Route logs to multiple destinations:
+### Multi-Transport (array of targets)
 
 ```ts
 const catalog = createCatalog({
   service: "my-app",
   transport: [
-    { target: "pino/file", options: {} }, // stdout
-    { target: "pino/file", options: { destination: "./logs/app.log" } }, // file
-    { target: "pino-roll", options: { file: "./logs/out.log", frequency: "daily" } }, // rolling
+    { target: "pino/file", options: { destination: "./logs/app.log" } },
+    { target: "pino-roll", options: { file: "./logs/out.log", frequency: "daily", mkdir: true } },
   ],
 });
 ```
 
-### Error Serializer
-
-Catalog includes a built-in error serializer that converts `Error` instances into structured objects:
-
-```ts
-try {
-  await riskyOperation();
-} catch (err) {
-  catalog.error("operation.failed", { error: err });
-  // error is serialised: { message, name, stack, cause }
-}
-```
-
-### Safe Error Response Helper
-
-For API backends, Catalog provides helpers to build safe error responses without leaking internals:
-
-```ts
-import { safeError } from "@joinremba/catalog";
-
-app.onError((err, c) => {
-  catalog.error("request.error", { error: err });
-  return c.json(safeError(err), 500);
-});
-```
-
-## Middleware
-
-### Request ID Middleware
-
-Automatically generates or extracts a request ID and binds it to all logs within a request:
-
-```ts
-import { requestId } from "@joinremba/catalog";
-import { createCatalog } from "@joinremba/catalog";
-
-const catalog = createCatalog({ service: "my-api" });
-
-// Express
-app.use(requestId({ header: "X-Request-Id" }));
-app.use((req, res, next) => {
-  const log = catalog.child({ requestId: req.headers["x-request-id"] });
-  req.log = log;
-  next();
-});
-```
-
-### HTTP Request Logger
-
-Automatically log incoming requests and responses:
-
-```ts
-import { httpLogger } from "@joinremba/catalog";
-
-// Express
-app.use(httpLogger({ catalog, excludePaths: ["/health"] }));
-```
-
-## Framework Adapters
-
-Catalog is framework-agnostic but ships with adapters for popular frameworks:
-
-```ts
-// Express
-import { requestIdMiddleware, httpLoggerMiddleware } from "@joinremba/catalog/adapters/express";
-
-// Hono
-import { requestIdMiddleware, httpLoggerMiddleware } from "@joinremba/catalog/adapters/hono";
-
-// Fastify
-import { requestIdHook, httpLoggerHook } from "@joinremba/catalog/adapters/fastify";
-```
-
-Adapters automatically configure request ID tracking, error serialization, and HTTP logging for the target framework.
-
-## TypeScript Types
-
-```ts
-import type { Catalog, LogLevel, CatalogOptions, TransportOptions } from "@joinremba/catalog";
-```
-
-| Type               | Description                                                            |
-| ------------------ | ---------------------------------------------------------------------- |
-| `Catalog`          | The logger instance type.                                              |
-| `LogLevel`         | Union: `"trace" \| "debug" \| "info" \| "warn" \| "error" \| "fatal"`. |
-| `CatalogOptions`   | Options object passed to `createCatalog`.                              |
-| `TransportOptions` | Transport configuration with `target` and `options`.                   |
-
-## Examples
-
-### Basic usage
-
-```ts
-import { createCatalog } from "@joinremba/catalog";
-
-const catalog = createCatalog({ service: "my-service" });
-
-catalog.info("service.starting");
-catalog.debug("config.loaded", { port: 3000 });
-```
-
-### With request context
-
-```ts
-import { createCatalog } from "@joinremba/catalog";
-
-const catalog = createCatalog({ service: "web-app" });
-
-Bun.serve({
-  port: 3000,
-  fetch(req) {
-    const log = catalog.child({ requestId: crypto.randomUUID() });
-    log.info("request.incoming", { url: req.url });
-    return new Response("OK");
-  },
-});
-```
-
-### Environment-aware config
+### Development Pretty-Print
 
 ```ts
 const catalog = createCatalog({
   service: "my-app",
-  environment: process.env.NODE_ENV,
-  level: process.env.NODE_ENV === "production" ? "info" : "debug",
   transport:
     process.env.NODE_ENV === "production"
-      ? [
-          { target: "pino/file", options: { destination: "./logs/app.log" } },
-          { target: "pino-roll", options: { file: "./logs/out.log", frequency: "daily" } },
-        ]
-      : undefined, // pretty-print to console in dev
+      ? { target: "pino/file", options: { destination: "./logs/app.log" } }
+      : { target: "pino-pretty", options: { colorize: true } },
 });
 ```
 
-## Roadmap
+## Redaction
 
-**MVP** (current)
+Catalog automatically redacts a comprehensive set of sensitive field names (case-insensitive, recursive):
 
-- Pino wrapper with event-name-first API
-- Sensitive data redaction with configurable paths
-- Child loggers with bound context
-- Multi-transport support
-- Error serializer
-- Safe error response helper
+`password`, `passwordHash`, `secret`, `apiKey`, `apiSecret`, `token`, `accessToken`, `refreshToken`, `idToken`, `ssn`, `taxId`, `passportNumber`, `driverLicense`, `phone`, `phoneNumber`, `mobile`, `email`, `emailAddress`, `accountNumber`, `routingNumber`, `iban`, `swift`, `cardNumber`, `cvv`, `cvc`, `expiryDate`, `pin`, `bvn`, `nin`, `bvnHash`, `ninHash`, `ip`, `ipAddress`, `userAgent`, `firstName`, `lastName`, `fullName`, `dateOfBirth`, `dob`, `address`, `location`, `otp`, `securityAnswer`
 
-**V1**
+Add extra fields with the `redact` option:
 
-- Request ID middleware
-- HTTP request logging middleware
-- Express, Hono, Fastify adapters
-- Audit event module (`catalog.audit()`)
-- Security event module (`catalog.security()`)
-- Webhook event module
-- Payment-safe log redaction defaults
-- Local pretty log viewer
-- OpenTelemetry bridge
-- Log sampling
+```ts
+const catalog = createCatalog({
+  service: "secure-app",
+  redact: ["authorization", "x-api-key"],
+});
+```
 
-**V2**
+For path-level control, use Pino's built-in `redactPaths`:
 
-- Hosted log ingestion
-- Dashboards and alerts
-- Retention policies
-- Compliance exports
-- Audit-log immutability
-- Team access controls
+```ts
+const catalog = createCatalog({
+  service: "secure-app",
+  redactPaths: ["user.ssn", "headers.authorization"],
+});
+```
+
+## `safeError()`
+
+Converts an `Error` into a plain object safe for API responses — strips stack traces:
+
+```ts
+import { safeError, createCatalog } from "@joinremba/catalog";
+
+try {
+  await riskyOperation();
+} catch (err) {
+  catalog.error("operation.failed", safeError(err));
+  return Response.json(safeError(err), { status: 500 });
+}
+```
+
+Output: `{ "message": "...", "name": "Error", "code": "ECONNREFUSED" }`
+
+## `requestId` Mixin
+
+Use the `mixin` option to inject request context into every log entry:
+
+```ts
+const catalog = createCatalog({
+  service: "my-api",
+  mixin: () => ({ requestId: crypto.randomUUID() }),
+});
+
+// Every log includes requestId
+catalog.info("request.started", { path: req.url });
+```
+
+Child loggers inherit and extend the mixin:
+
+```ts
+const child = catalog.child({ userId: "usr_42" });
+child.info("user.action"); // includes both requestId and userId
+```
+
+## Error Event Layer
+
+Use event-name conventions to build a consistent error taxonomy:
+
+```ts
+catalog.error("db.connection_failed", { database: "users", error: safeError(err) });
+catalog.error("payment.declined", { provider: "stripe", reason: "insufficient_funds" });
+catalog.fatal("system.out_of_memory", { heapUsed: process.memoryUsage().heapUsed });
+```
+
+Framework adapters map HTTP status to log level automatically:
+
+| Status Range | Log Level |
+| ------------ | --------- |
+| 200–399      | `info`    |
+| 400–499      | `warn`    |
+| 500+         | `error`   |
+
+## Integration with `@joinremba/core`
+
+Pass a `Client` instance for cloud log ingestion. Logs buffer locally and flush remotely:
+
+```ts
+import { createCatalog } from "@joinremba/catalog";
+import { createClient } from "@joinremba/core";
+
+const client = createClient({ apiKey: process.env.REMBA_API_KEY });
+
+const catalog = createCatalog({
+  service: "my-api",
+  environment: "production",
+  client, // enables remote ingestion
+  transport: { target: "pino-roll", options: { file: "./logs/out.log", frequency: "daily" } },
+});
+
+catalog.info("user.created", { userId: "usr_abc123" });
+// Flushes every 100 events or on process exit
+```
+
+## Sub-Modules
+
+### Audit
+
+```ts
+import { auditLogger } from "@joinremba/catalog/audit";
+const audit = auditLogger(catalog);
+audit.log({
+  action: "user.role_changed",
+  actor: "admin@company.com",
+  resource: "user",
+  resourceId: "usr_abc123",
+  outcome: "success",
+  details: { fromRole: "viewer", toRole: "admin" },
+});
+```
+
+### Security
+
+```ts
+import { securityLogger } from "@joinremba/catalog/security";
+const security = securityLogger(catalog);
+security.log({
+  action: "login.failed",
+  actor: "user@example.com",
+  ip: "203.0.113.42",
+  severity: "critical",
+  details: { attemptCount: 5 },
+});
+```
+
+### Webhook Forwarding
+
+```ts
+import { webhookLogger } from "@joinremba/catalog/webhook";
+const webhook = webhookLogger(catalog, {
+  targets: [{
+    url: "https://hooks.example.com/logs",
+    level: "warn",
+    headers: { Authorization: "Bearer tok_xxx" },
+    secret: "whsec_xxx",
+  }],
+  batchIntervalMs: 5000,
+  maxBatchSize: 50,
+  retryCount: 2,
+});
+webhook.warn("rate_limit.exceeded", { userId: "usr_42" });
+webhook.stop(); // flush remaining on shutdown
+```
+
+### OpenTelemetry Bridge
+
+```ts
+import { otelBridge } from "@joinremba/catalog/otel";
+const otelCatalog = otelBridge(catalog, {
+  api: trace, // from @opentelemetry/api
+  captureSpanEvents: true,
+});
+otelCatalog.info("user.created", { userId: "usr_abc123" });
+// Every log includes trace_id and span_id
+```
+
+### Log Sampling
+
+```ts
+import { samplingCatalog } from "@joinremba/catalog/sampling";
+const sampled = samplingCatalog(catalog, {
+  rate: 0.1, // log 10% of events
+  level: "debug",
+});
+```
+
+## Framework Adapters
+
+### Hono
+
+```ts
+import { requestIdMiddleware, httpLoggerMiddleware } from "@joinremba/catalog/adapters/hono";
+app.use("*", requestIdMiddleware(catalog));
+app.use("*", httpLoggerMiddleware(catalog, { excludePaths: ["/health"] }));
+```
+
+### Express
+
+```ts
+import { requestIdMiddleware, httpLoggerMiddleware } from "@joinremba/catalog/adapters/express";
+app.use(requestIdMiddleware(catalog));
+app.use(httpLoggerMiddleware(catalog));
+```
+
+### Fastify
+
+```ts
+import { requestIdHook, httpLoggerHook } from "@joinremba/catalog/adapters/fastify";
+fastify.addHook("onRequest", requestIdHook(catalog));
+fastify.addHook("onRequest", httpLoggerHook(catalog));
+```
+
+## Configuration Reference
+
+| Option          | Type                                                     | Default       | Description                                          |
+| --------------- | -------------------------------------------------------- | ------------- | ---------------------------------------------------- |
+| `service`       | `string`                                                 | **(required)** | Service name included as `name` in every log entry. |
+| `environment`   | `string`                                                 | —             | Environment tag (e.g. `"production"`).               |
+| `level`         | `LogLevel`                                               | `"info"`      | Minimum log level to emit.                           |
+| `redact`        | `string[]`                                               | —             | Extra sensitive field names to redact (case-insensitive). |
+| `redactPaths`   | `string[]`                                               | —             | Pino path-based redact patterns (e.g. `"user.ssn"`). |
+| `transport`     | `TransportOptions \| TransportOptions[]`                 | stdout        | Pino transport config object or array of targets.    |
+| `destination`   | `PinoDestination`                                        | —             | Custom writable stream (overrides `transport`).      |
+| `mixin`         | `() => Record<string, unknown>`                          | —             | Function returning extra fields to merge into every log. |
+| `base`          | `Record<string, unknown>`                                | —             | Static base fields for every log entry.              |
+| `client`        | `Client`                                                 | —             | `@joinremba/core` client for cloud log ingestion.    |
+
+## TypeScript
+
+All types are exported from the package root:
+
+```ts
+import type { Catalog, CatalogOptions, LogLevel, TransportOptions, PinoDestination } from "@joinremba/catalog";
+```
+
+| Type               | Description                                                    |
+| ------------------ | -------------------------------------------------------------- |
+| `Catalog`          | Logger instance returned by `createCatalog`.                   |
+| `CatalogOptions`   | Input options for `createCatalog`.                             |
+| `LogLevel`         | `"trace" \| "debug" \| "info" \| "warn" \| "error" \| "fatal"` |
+| `TransportOptions` | `{ target: string; options?: Record<string, unknown> }`        |
+| `PinoDestination`  | `{ write: (data: string \| Uint8Array) => void }`              |
+
+Subpackage types:
+
+```ts
+import type { AuditEvent } from "@joinremba/catalog/audit";
+import type { SecurityEvent } from "@joinremba/catalog/security";
+import type { WebhookOptions, WebhookTarget } from "@joinremba/catalog/webhook";
+import type { OtelBridgeOptions } from "@joinremba/catalog/otel";
+import type { SamplingOptions } from "@joinremba/catalog/sampling";
+import type { HonoRequestIdOptions, HttpLogOptions } from "@joinremba/catalog/adapters/hono";
+import type { ExpressRequestIdOptions } from "@joinremba/catalog/adapters/express";
+import type { FastifyRequestIdOptions } from "@joinremba/catalog/adapters/fastify";
+```
+
+## Package Exports
+
+| Path                                | Contents                       |
+| ----------------------------------- | ------------------------------ |
+| `@joinremba/catalog`                | Main `createCatalog` + types   |
+| `@joinremba/catalog/audit`          | `auditLogger` + `AuditEvent`   |
+| `@joinremba/catalog/security`       | `securityLogger` + `SecurityEvent` |
+| `@joinremba/catalog/webhook`        | `webhookLogger` + types        |
+| `@joinremba/catalog/otel`           | `otelBridge` + types           |
+| `@joinremba/catalog/sampling`       | `samplingCatalog` + types      |
+| `@joinremba/catalog/adapters/hono`  | Hono middleware                |
+| `@joinremba/catalog/adapters/express` | Express middleware           |
+| `@joinremba/catalog/adapters/fastify` | Fastify hooks              |
 
 ## Related Packages
 
+- [@joinremba/core](https://github.com/joinremba/core) — Cloud log ingestion client.
 - [@joinremba/beacon](https://github.com/joinremba/beacon) — Environment validation, config, secrets, and feature gates.
 - [@joinremba/gate](https://github.com/joinremba/gate) — API safety layer: validation, responses, idempotency, rate limiting, and API keys.
 
 ## Contributing
 
-Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on how to contribute to this project.
+See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 
-MIT &mdash; see [LICENSE](LICENSE).
+MIT — see [LICENSE](LICENSE).
