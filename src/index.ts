@@ -7,6 +7,7 @@ export type LogLevel = PinoLevel;
 export interface TransportOptions {
   target: string;
   options?: Record<string, unknown>;
+  level?: string;
 }
 
 export interface TransportTarget {
@@ -163,7 +164,12 @@ export function createCatalog(options: CatalogOptions): Catalog {
   if (destination) {
     logger = pino(pinoOptions, destination as unknown as pino.DestinationStream);
   } else if (transport) {
-    const list = "targets" in transport ? transport.targets : Array.isArray(transport) ? transport : [transport];
+    const list =
+      "targets" in transport
+        ? transport.targets
+        : Array.isArray(transport)
+          ? transport
+          : [transport];
     const targets = list.map((t) => ({
       target: t.target,
       options: t.options ?? {},

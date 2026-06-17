@@ -55,14 +55,14 @@ bun run start | bunx pino-pretty
 
 ## Log Levels
 
-| Level   | Method                 | Usage                              |
-| ------- | ---------------------- | ---------------------------------- |
-| `trace` | `catalog.trace(...)`   | Diagnostic detail during dev       |
-| `debug` | `catalog.debug(...)`   | Development debugging              |
-| `info`  | `catalog.info(...)`    | Normal operational events          |
-| `warn`  | `catalog.warn(...)`    | Unexpected but handled situations  |
-| `error` | `catalog.error(...)`   | Recoverable errors                 |
-| `fatal` | `catalog.fatal(...)`   | Unrecoverable failures             |
+| Level   | Method               | Usage                             |
+| ------- | -------------------- | --------------------------------- |
+| `trace` | `catalog.trace(...)` | Diagnostic detail during dev      |
+| `debug` | `catalog.debug(...)` | Development debugging             |
+| `info`  | `catalog.info(...)`  | Normal operational events         |
+| `warn`  | `catalog.warn(...)`  | Unexpected but handled situations |
+| `error` | `catalog.error(...)` | Recoverable errors                |
+| `fatal` | `catalog.fatal(...)` | Unrecoverable failures            |
 
 Each method supports event-name-first, object-style, and event-only:
 
@@ -269,12 +269,14 @@ security.log({
 ```ts
 import { webhookLogger } from "@joinremba/catalog/webhook";
 const webhook = webhookLogger(catalog, {
-  targets: [{
-    url: "https://hooks.example.com/logs",
-    level: "warn",
-    headers: { Authorization: "Bearer tok_xxx" },
-    secret: "whsec_xxx",
-  }],
+  targets: [
+    {
+      url: "https://hooks.example.com/logs",
+      level: "warn",
+      headers: { Authorization: "Bearer tok_xxx" },
+      secret: "whsec_xxx",
+    },
+  ],
   batchIntervalMs: 5000,
   maxBatchSize: 50,
   retryCount: 2,
@@ -333,25 +335,31 @@ fastify.addHook("onRequest", httpLoggerHook(catalog));
 
 ## Configuration Reference
 
-| Option          | Type                                                     | Default       | Description                                          |
-| --------------- | -------------------------------------------------------- | ------------- | ---------------------------------------------------- |
-| `service`       | `string`                                                 | **(required)** | Service name included as `name` in every log entry. |
-| `environment`   | `string`                                                 | —             | Environment tag (e.g. `"production"`).               |
-| `level`         | `LogLevel`                                               | `"info"`      | Minimum log level to emit.                           |
-| `redact`        | `string[]`                                               | —             | Extra sensitive field names to redact (case-insensitive). |
-| `redactPaths`   | `string[]`                                               | —             | Pino path-based redact patterns (e.g. `"user.ssn"`). |
-| `transport`     | `TransportOptions \| TransportOptions[]`                 | stdout        | Pino transport config object or array of targets.    |
-| `destination`   | `PinoDestination`                                        | —             | Custom writable stream (overrides `transport`).      |
-| `mixin`         | `() => Record<string, unknown>`                          | —             | Function returning extra fields to merge into every log. |
-| `base`          | `Record<string, unknown>`                                | —             | Static base fields for every log entry.              |
-| `client`        | `Client`                                                 | —             | `@joinremba/core` client for cloud log ingestion.    |
+| Option        | Type                                     | Default        | Description                                               |
+| ------------- | ---------------------------------------- | -------------- | --------------------------------------------------------- |
+| `service`     | `string`                                 | **(required)** | Service name included as `name` in every log entry.       |
+| `environment` | `string`                                 | —              | Environment tag (e.g. `"production"`).                    |
+| `level`       | `LogLevel`                               | `"info"`       | Minimum log level to emit.                                |
+| `redact`      | `string[]`                               | —              | Extra sensitive field names to redact (case-insensitive). |
+| `redactPaths` | `string[]`                               | —              | Pino path-based redact patterns (e.g. `"user.ssn"`).      |
+| `transport`   | `TransportOptions \| TransportOptions[]` | stdout         | Pino transport config object or array of targets.         |
+| `destination` | `PinoDestination`                        | —              | Custom writable stream (overrides `transport`).           |
+| `mixin`       | `() => Record<string, unknown>`          | —              | Function returning extra fields to merge into every log.  |
+| `base`        | `Record<string, unknown>`                | —              | Static base fields for every log entry.                   |
+| `client`      | `Client`                                 | —              | `@joinremba/core` client for cloud log ingestion.         |
 
 ## TypeScript
 
 All types are exported from the package root:
 
 ```ts
-import type { Catalog, CatalogOptions, LogLevel, TransportOptions, PinoDestination } from "@joinremba/catalog";
+import type {
+  Catalog,
+  CatalogOptions,
+  LogLevel,
+  TransportOptions,
+  PinoDestination,
+} from "@joinremba/catalog";
 ```
 
 | Type               | Description                                                    |
@@ -377,17 +385,17 @@ import type { FastifyRequestIdOptions } from "@joinremba/catalog/adapters/fastif
 
 ## Package Exports
 
-| Path                                | Contents                       |
-| ----------------------------------- | ------------------------------ |
-| `@joinremba/catalog`                | Main `createCatalog` + types   |
-| `@joinremba/catalog/audit`          | `auditLogger` + `AuditEvent`   |
-| `@joinremba/catalog/security`       | `securityLogger` + `SecurityEvent` |
-| `@joinremba/catalog/webhook`        | `webhookLogger` + types        |
-| `@joinremba/catalog/otel`           | `otelBridge` + types           |
-| `@joinremba/catalog/sampling`       | `samplingCatalog` + types      |
-| `@joinremba/catalog/adapters/hono`  | Hono middleware                |
-| `@joinremba/catalog/adapters/express` | Express middleware           |
-| `@joinremba/catalog/adapters/fastify` | Fastify hooks              |
+| Path                                  | Contents                           |
+| ------------------------------------- | ---------------------------------- |
+| `@joinremba/catalog`                  | Main `createCatalog` + types       |
+| `@joinremba/catalog/audit`            | `auditLogger` + `AuditEvent`       |
+| `@joinremba/catalog/security`         | `securityLogger` + `SecurityEvent` |
+| `@joinremba/catalog/webhook`          | `webhookLogger` + types            |
+| `@joinremba/catalog/otel`             | `otelBridge` + types               |
+| `@joinremba/catalog/sampling`         | `samplingCatalog` + types          |
+| `@joinremba/catalog/adapters/hono`    | Hono middleware                    |
+| `@joinremba/catalog/adapters/express` | Express middleware                 |
+| `@joinremba/catalog/adapters/fastify` | Fastify hooks                      |
 
 ## Related Packages
 
