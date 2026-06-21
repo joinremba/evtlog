@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0] — 2026-06-21
+
+### Added
+
+- Runtime level setter — `catalog.level = "debug"` changes log level on the fly
+- `withContext(fn)` — lazy per-log context injection via mixin, designed for AsyncLocalStorage
+- `envTransport("production", { retention: { maxFiles: 14, maxSize: "500MB" } })` — retention options for pino-roll
+
+### Fixed
+
+- `withContext()` context data now passes through `redactFields` for consistent redaction
+- Child loggers created via `withContext` properly call `enqueue` for remote log ingestion
+
 ## [0.4.0] — 2026-06-13
 
 ### Added
