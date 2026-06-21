@@ -50,6 +50,11 @@
       "types": "./src/sampling.ts",
       "import": "./src/sampling.ts",
       "default": "./src/sampling.ts"
+    },
+    "./env-transport": {
+      "types": "./src/env-transport.ts",
+      "import": "./src/env-transport.ts",
+      "default": "./src/env-transport.ts"
     }
   },
   "files": [

@@ -259,4 +259,6 @@ export function safeError(error: unknown): Record<string, unknown> {
   return { message: String(error) };
 }
 
+export { envTransport } from "./env-transport";
+
 export default createCatalog;

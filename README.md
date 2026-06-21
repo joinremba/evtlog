@@ -13,6 +13,7 @@ Production-ready logging and error event layer for TypeScript backends, built on
 - **Pino under the hood** — Ultra-fast structured JSON logging with full Pino transport ecosystem.
 - **Automatic sensitive data redaction** — Built-in denylist of PII, secrets, and credentials (email, phone, SSN, API keys, tokens, etc.), plus configurable path patterns.
 - **Multi-transport** — Single transport or array of targets for console, file, rolling files (pino-roll), or external sinks.
+- **`envTransport()`** — Auto-configure file transport per environment with zero config.
 - **Child loggers** — `.child()` and `.scope()` for request-scoped and module-scoped context binding.
 - **Error serialization** — `safeError()` helper strips internals from `Error` objects for safe API responses.
 - **Framework adapters** — First-class support for Hono, Express, and Fastify.
@@ -120,16 +121,39 @@ const catalog = createCatalog({
 });
 ```
 
-### Development Pretty-Print
+### Environment-Aware Transport (`envTransport()`)
+
+Use `envTransport()` to automatically configure the right transport per `NODE_ENV`:
+
+```ts
+import { createCatalog, envTransport } from "@joinremba/catalog";
+
+const catalog = createCatalog({
+  service: "my-api",
+  ...envTransport(),
+});
+```
+
+| NODE_ENV      | Transport           | Output                  | Level  |
+| ------------- | ------------------- | ----------------------- | ------ |
+| `development` | `pino/file`         | `./logs/dev.log`        | debug  |
+| `test`        | (none)              | silent                  | silent |
+| `staging`     | `pino/file`         | `./logs/staging.log`    | info   |
+| `production`  | `pino-roll` (daily) | `./logs/production.log` | info   |
+
+Override the environment explicitly:
 
 ```ts
 const catalog = createCatalog({
-  service: "my-app",
-  transport:
-    process.env.NODE_ENV === "production"
-      ? { target: "pino/file", options: { destination: "./logs/app.log" } }
-      : { target: "pino-pretty", options: { colorize: true } },
+  service: "my-api",
+  ...envTransport("production"),
 });
+```
+
+Import from the subpath:
+
+```ts
+import { envTransport } from "@joinremba/catalog/env-transport";
 ```
 
 ## Redaction
@@ -307,6 +331,110 @@ const sampled = samplingCatalog(catalog, {
 });
 ```
 
+## Centralized Logging (Microservices)
+
+When running multiple services, you need a way to view logs from all of them in one place. Two approaches:
+
+### 1. Webhook Aggregator
+
+Each service forward logs to a central receiver using `@joinremba/catalog/webhook`. The receiver collects logs from all services and writes them to a shared sink.
+
+```ts
+// Each microservice:
+import { createCatalog } from "@joinremba/catalog";
+import { webhookLogger } from "@joinremba/catalog/webhook";
+
+const catalog = createCatalog({
+  service: "user-service", // different name per service
+  environment: "production",
+  ...envTransport(),
+});
+
+const webhook = webhookLogger(catalog, {
+  targets: [
+    {
+      url: "https://logs.internal:4000/ingest", // central receiver
+      level: "warn", // only warns and above
+      secret: process.env.WEBHOOK_SECRET!, // HMAC signing
+    },
+  ],
+  batchIntervalMs: 5000,
+  maxBatchSize: 50,
+});
+```
+
+The central receiver can be a simple Hono/Express server that writes to a shared file, Loki, Elasticsearch, or any other sink.
+
+### 2. File + Log Shipper
+
+Each service writes to a local file. A log shipper (Vector, Filebeat, Fluentd, or Promtail) tails each file and forwards to a central store (Loki, Elasticsearch, ClickHouse).
+
+```ts
+// Each service writes its own file:
+const catalog = createCatalog({
+  service: "payment-service", // identifies the source
+  environment: "production",
+  ...envTransport("production"), // → ./logs/production.log
+});
+```
+
+On each host, run:
+
+```bash
+# Example: Promtail → Loki
+promtail --config.file=/etc/promtail.yml
+```
+
+Where `promtail.yml` tails `./logs/*.log` and adds `service` and `host` labels.
+
+## Error Alerting
+
+Catalog does not include built-in alerting, but it provides the hooks to trigger alerts:
+
+### Via Webhook Forwarding
+
+Use `@joinremba/catalog/webhook` to send errors to any alert endpoint:
+
+```ts
+import { webhookLogger } from "@joinremba/catalog/webhook";
+
+const alerts = webhookLogger(catalog, {
+  targets: [
+    {
+      url: "https://hooks.pagerduty.com/integration/...",
+      level: "error", // only errors and fatals
+      headers: { Authorization: "Bearer tok_xxx" },
+    },
+    {
+      url: "https://hooks.slack.com/services/...",
+      level: "error",
+    },
+  ],
+  batchIntervalMs: 2000, // alert quickly
+  maxBatchSize: 5,
+});
+
+// Elsewhere in your code:
+alerts.error("payment.provider_down", { provider: "stripe" });
+// Delivered to PagerDuty + Slack within ~2 seconds
+```
+
+### Via Cloud Ingestion
+
+If you use the `@joinremba/core` client, you can set up alert rules in the Remba cloud dashboard — define thresholds (e.g., >5 errors/min) and notification channels (email, Slack, PagerDuty).
+
+### Manual Error Tracking
+
+For custom monitoring, pipe the NDJSON output to a log processor:
+
+```bash
+bun run start | grep '"level":50' | while read -r line; do
+  curl -X POST https://alerts.example.com/error -d "$line"
+done
+```
+
+Level values: `10`=trace, `20`=debug, `30`=info, `40`=warn, `50`=error, `60`=fatal.
+
 ## Framework Adapters
 
 ### Hono
@@ -378,6 +506,7 @@ import type { SecurityEvent } from "@joinremba/catalog/security";
 import type { WebhookOptions, WebhookTarget } from "@joinremba/catalog/webhook";
 import type { OtelBridgeOptions } from "@joinremba/catalog/otel";
 import type { SamplingOptions } from "@joinremba/catalog/sampling";
+import type { EnvTransportResult } from "@joinremba/catalog/env-transport";
 import type { HonoRequestIdOptions, HttpLogOptions } from "@joinremba/catalog/adapters/hono";
 import type { ExpressRequestIdOptions } from "@joinremba/catalog/adapters/express";
 import type { FastifyRequestIdOptions } from "@joinremba/catalog/adapters/fastify";
@@ -393,6 +522,7 @@ import type { FastifyRequestIdOptions } from "@joinremba/catalog/adapters/fastif
 | `@joinremba/catalog/webhook`          | `webhookLogger` + types            |
 | `@joinremba/catalog/otel`             | `otelBridge` + types               |
 | `@joinremba/catalog/sampling`         | `samplingCatalog` + types          |
+| `@joinremba/catalog/env-transport`    | `envTransport`                     |
 | `@joinremba/catalog/adapters/hono`    | Hono middleware                    |
 | `@joinremba/catalog/adapters/express` | Express middleware                 |
 | `@joinremba/catalog/adapters/fastify` | Fastify hooks                      |
