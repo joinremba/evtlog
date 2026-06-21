@@ -55,7 +55,12 @@ export interface Catalog {
    *  Equivalent to `.child({ module: name })` — every log entry from the
    *  returned logger includes `"module":"name"`. */
   scope(name: string): Catalog;
-  readonly level: LogLevel;
+  /** Create a child logger that resolves context at log time via a function.
+   *  The function is called fresh on every log entry, so it picks up the
+   *  current async context (e.g. AsyncLocalStorage). */
+  withContext(fn: () => Record<string, unknown>): Catalog;
+  /** Get or set the minimum log level at runtime. */
+  level: LogLevel;
 }
 
 const SENSITIVE_FIELDS = new Set([
@@ -237,8 +242,52 @@ export function createCatalog(options: CatalogOptions): Catalog {
         return buildChild(parentLogger.child({ module: name }));
       },
 
+      withContext(fn: () => Record<string, unknown>): Catalog {
+        const childLogger = parentLogger.child({});
+        const adaptWithContext =
+          (method: PinoLevel) =>
+          (first: string | Record<string, unknown>, second?: Record<string, unknown>) => {
+            const ctx = fn();
+            if (typeof first === "string") {
+              const data = { ...ctx, ...(second as Record<string, unknown>) };
+              childLogger[method](redactFields(data, extraRedactFields), first);
+              enqueue(method, first, data);
+            } else {
+              const data = { ...ctx, ...(first as Record<string, unknown>) };
+              childLogger[method](redactFields(data, extraRedactFields));
+              enqueue(method, "", data);
+            }
+          };
+        return {
+          trace: adaptWithContext("trace"),
+          debug: adaptWithContext("debug"),
+          info: adaptWithContext("info"),
+          warn: adaptWithContext("warn"),
+          error: adaptWithContext("error"),
+          fatal: adaptWithContext("fatal"),
+          child(bindings: Record<string, unknown>): Catalog {
+            return buildChild(childLogger.child(bindings));
+          },
+          scope(name: string): Catalog {
+            return buildChild(childLogger.child({ module: name }));
+          },
+          withContext: (newFn: () => Record<string, unknown>): Catalog =>
+            buildChild(childLogger.child({})).withContext(newFn),
+          get level(): LogLevel {
+            return childLogger.level as LogLevel;
+          },
+          set level(val: LogLevel) {
+            childLogger.level = val;
+          },
+        };
+      },
+
       get level(): LogLevel {
         return parentLogger.level as LogLevel;
+      },
+
+      set level(val: LogLevel) {
+        parentLogger.level = val;
       },
     };
   };

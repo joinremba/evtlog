@@ -32,6 +32,30 @@ test("respects log level", () => {
   expect(catalog.level).toBe("warn");
 });
 
+test("level can be changed at runtime", () => {
+  const catalog = createCatalog({ service: "test", level: "warn" });
+  expect(catalog.level).toBe("warn");
+  catalog.level = "debug";
+  expect(catalog.level).toBe("debug");
+});
+
+test("level setter affects what gets logged", () => {
+  const lines: Record<string, unknown>[] = [];
+  const catalog = createCatalog({
+    service: "test",
+    level: "error",
+    destination: {
+      write(data) {
+        lines.push(JSON.parse(data.toString()) as Record<string, unknown>);
+      },
+    },
+  });
+  catalog.info("should.not.appear");
+  catalog.level = "info";
+  catalog.info("should.appear");
+  expect(lines.some((l) => l.msg === "should.appear")).toBe(true);
+});
+
 test("creates child logger with bound fields", () => {
   const catalog = createCatalog({ service: "app" });
   const child = catalog.child({ requestId: "abc-123" });
@@ -107,4 +131,51 @@ test("child logger inherits mixin", () => {
   });
   const child = catalog.child({ userId: "42" });
   expect(() => child.info("user.action")).not.toThrow();
+});
+
+test("withContext resolves context at log time", () => {
+  const lines: Record<string, unknown>[] = [];
+  const catalog = createCatalog({
+    service: "ctx",
+    destination: {
+      write(data) {
+        lines.push(JSON.parse(data.toString()) as Record<string, unknown>);
+      },
+    },
+  });
+  const ctxCatalog = catalog.withContext(() => ({ requestId: "dyn-456" }));
+  ctxCatalog.info("event");
+  expect(lines.some((l) => l.requestId === "dyn-456")).toBe(true);
+});
+
+test("withContext merges with log data", () => {
+  const lines: Record<string, unknown>[] = [];
+  const catalog = createCatalog({
+    service: "ctx",
+    destination: {
+      write(data) {
+        lines.push(JSON.parse(data.toString()) as Record<string, unknown>);
+      },
+    },
+  });
+  const ctxCatalog = catalog.withContext(() => ({ region: "us-east" }));
+  ctxCatalog.info("order.placed", { orderId: "123" });
+  const entry = lines.find((l) => l.msg === "order.placed")!;
+  expect(entry.region).toBe("us-east");
+  expect(entry.orderId).toBe("123");
+});
+
+test("withContext respects redaction", () => {
+  const lines: Record<string, unknown>[] = [];
+  const catalog = createCatalog({
+    service: "ctx-redact",
+    destination: {
+      write(data) {
+        lines.push(JSON.parse(data.toString()) as Record<string, unknown>);
+      },
+    },
+  });
+  const ctxCatalog = catalog.withContext(() => ({ password: "should-redact" }));
+  ctxCatalog.info("event");
+  expect(lines.some((l) => l.password === "[REDACTED]")).toBe(true);
 });

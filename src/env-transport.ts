@@ -6,9 +6,16 @@ export type EnvTransportResult = {
   level?: LogLevel;
 };
 
+export interface EnvTransportOptions {
+  /** Number of log files to keep (pino-roll `maxFiles`). Only applies to production. */
+  maxFiles?: number;
+  /** Maximum total size before rotation, e.g. "500MB", "1GB" (pino-roll `maxSize`). */
+  maxSize?: string;
+}
+
 const noopDestination: PinoDestination = { write() {} };
 
-export function envTransport(env?: string): EnvTransportResult {
+export function envTransport(env?: string, opts?: EnvTransportOptions): EnvTransportResult {
   const environment = env ?? process.env.NODE_ENV ?? "development";
 
   switch (environment) {
@@ -16,7 +23,13 @@ export function envTransport(env?: string): EnvTransportResult {
       return {
         transport: {
           target: "pino-roll",
-          options: { file: "./logs/production.log", frequency: "daily", mkdir: true },
+          options: {
+            file: "./logs/production.log",
+            frequency: "daily",
+            mkdir: true,
+            ...(opts?.maxFiles !== undefined && { maxFiles: opts.maxFiles }),
+            ...(opts?.maxSize !== undefined && { maxSize: opts.maxSize }),
+          },
         },
         level: "info",
       };

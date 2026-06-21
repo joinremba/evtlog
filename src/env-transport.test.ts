@@ -11,6 +11,13 @@ test("returns pino-roll daily transport for production", () => {
   expect(t.options.file).toBe("./logs/production.log");
 });
 
+test("respects retention options for production", () => {
+  const result = envTransport("production", { maxFiles: 14, maxSize: "500MB" });
+  const t = result.transport as { target: string; options: Record<string, unknown> };
+  expect(t.options.maxFiles).toBe(14);
+  expect(t.options.maxSize).toBe("500MB");
+});
+
 test("returns pino/file for staging", () => {
   const result = envTransport("staging");
   expect(result.level).toBe("info");
@@ -47,12 +54,12 @@ test("respects NODE_ENV when env is omitted", () => {
 });
 
 test("falls back to development for unknown env", () => {
-  process.env.NODE_ENV = undefined;
-  const result = envTransport();
-  expect(result.level).toBe("debug");
-});
-
-test("falls back to development for unknown env", () => {
-  const result = envTransport("unknown-env");
-  expect(result.level).toBe("debug");
+  const prev = process.env.NODE_ENV;
+  delete process.env.NODE_ENV;
+  try {
+    const result = envTransport();
+    expect(result.level).toBe("debug");
+  } finally {
+    if (prev !== undefined) process.env.NODE_ENV = prev;
+  }
 });
