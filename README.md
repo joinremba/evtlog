@@ -1,4 +1,4 @@
-# @joinremba/catalog
+# catalog
 
 [![npm version](https://img.shields.io/npm/v/@joinremba/catalog)](https://www.npmjs.com/package/@joinremba/catalog)
 [![License](https://img.shields.io/npm/l/@joinremba/catalog)](LICENSE)
