@@ -17,7 +17,7 @@ export interface HonoRequestIdOptions {
   generate?: () => string;
 }
 
-export function requestIdMiddleware(catalog: Catalog, options?: HonoRequestIdOptions) {
+export function requestIdMiddleware(_catalog: Catalog, options?: HonoRequestIdOptions) {
   const headerName = options?.header?.toLowerCase() ?? "x-request-id";
   const generate = options?.generate ?? (() => crypto.randomUUID());
 

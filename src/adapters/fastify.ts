@@ -17,7 +17,7 @@ export interface FastifyRequestIdOptions {
   generate?: () => string;
 }
 
-export function requestIdHook(catalog: Catalog, options?: FastifyRequestIdOptions) {
+export function requestIdHook(_catalog: Catalog, options?: FastifyRequestIdOptions) {
   const headerName = options?.header?.toLowerCase() ?? "x-request-id";
   const generate = options?.generate ?? (() => crypto.randomUUID());
 
