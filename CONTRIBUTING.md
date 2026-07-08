@@ -1,6 +1,6 @@
-# Contributing to @joinremba/catalog
+# Contributing to evtlog
 
-Thank you for your interest in contributing to `@joinremba/catalog`! We welcome contributions from everyone, whether it is a bug report, feature suggestion, or a pull request.
+Thank you for your interest in contributing to `evtlog`! We welcome contributions from everyone, whether it is a bug report, feature suggestion, or a pull request.
 
 ## Code of Conduct
 
@@ -110,15 +110,15 @@ When requesting a feature, please describe:
 
 ## Getting Help
 
-If you have questions or need help, please open a [discussion](https://github.com/joinremba/catalog/discussions) or create an issue on GitHub.
+If you have questions or need help, please open a [discussion](https://github.com/joinremba/evtlog/discussions) or create an issue on GitHub.
 
 ## Publishing
 
-This package is published to npm under the `@joinremba` scope.
+This package is published to npm as `evtlog`.
 
 ### Prerequisites
 
-- You need npm publishing rights for the `@joinremba` organisation.
+- You need npm publishing rights for the `evtlog` package.
 - You need a valid npm OTP (one-time password) for 2FA.
 
 ### Release process

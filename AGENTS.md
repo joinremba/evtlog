@@ -11,7 +11,7 @@ bun run build             # Build to dist/
 
 ## Architecture
 
-- **`@joinremba/catalog`** — Production-ready logging and error event layer for TypeScript backends, built on Pino.
+- **`evtlog`** — Production-ready logging and error event layer for TypeScript backends, built on Pino.
 - **`src/index.ts`** — `createCatalog(options)` → returns `Catalog` with `trace|debug|info|warn|error|fatal` log methods, `child()`, `scope()`, `withContext()`.
 - **`src/audit.ts`** — Audit event logger (`auditLogger(catalog)`).
 - **`src/security.ts`** — Security event logger (`securityLogger(catalog)`).

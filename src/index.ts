@@ -1,6 +1,6 @@
 import pino from "pino";
 import type { Logger as PinoLogger, Level as PinoLevel, LoggerOptions } from "pino";
-import type { Client, LogEvent } from "@joinremba/core";
+import type { Client, LogEvent } from "./internal/types";
 
 export type LogLevel = PinoLevel;
 

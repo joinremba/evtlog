@@ -1,4 +1,4 @@
-# @joinremba/catalog
+# evtlog
 
 Production-ready logging and error event layer for TypeScript backends, built on Pino.
 
@@ -17,14 +17,14 @@ catalog.scope("module") — Module-scoped child logger (adds module field)
 safeError(err) — Strip stack/ internals from Error for safe API responses
 
 ## Sub-modules (deep imports)
-@joinremba/catalog/audit — auditLogger(catalog) with AuditEvent structure
-@joinremba/catalog/security — securityLogger(catalog) with SecurityEvent and severity levels
-@joinremba/catalog/webhook — Batch log delivery to webhook endpoints with HMAC SHA-256 signing and retry
-@joinremba/catalog/otel — OpenTelemetry bridge: injects trace_id/span_id, optional span events
-@joinremba/catalog/sampling — Deterministic or custom log sampling to control volume
-@joinremba/catalog/adapters/hono — requestIdMiddleware + httpLoggerMiddleware
-@joinremba/catalog/adapters/express — requestIdMiddleware + httpLoggerMiddleware
-@joinremba/catalog/adapters/fastify — requestIdHook + httpLoggerHook
+evtlog/audit — auditLogger(catalog) with AuditEvent structure
+evtlog/security — securityLogger(catalog) with SecurityEvent and severity levels
+evtlog/webhook — Batch log delivery to webhook endpoints with HMAC SHA-256 signing and retry
+evtlog/otel — OpenTelemetry bridge: injects trace_id/span_id, optional span events
+evtlog/sampling — Deterministic or custom log sampling to control volume
+evtlog/adapters/hono — requestIdMiddleware + httpLoggerMiddleware
+evtlog/adapters/express — requestIdMiddleware + httpLoggerMiddleware
+evtlog/adapters/fastify — requestIdHook + httpLoggerHook
 
 ## Redaction
 Built-in denylist: password, secret, apiKey, token, ssn, email, phone, cardNumber, etc. (40+ fields)
@@ -34,4 +34,4 @@ Recursive, case-insensitive. Add extra fields via redact option or use redactPat
 Event-name-first API wraps Pino internally.
 Child loggers inherit parent options (redaction, transport, mixin).
 Transport: single, array, or { targets: [...] } format. Supports pino-roll for rolling files.
-Cloud ingestion via @joinremba/core client: buffers 100 events, flushes on beforeExit.
+Cloud ingestion with client: buffers 100 events, flushes on beforeExit.

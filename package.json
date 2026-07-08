@@ -1,5 +1,5 @@
 {
-  "name": "@joinremba/catalog",
+  "name": "evtlog",
   "version": "0.7.0",
   "description": "Production-ready logging and error event layer for TypeScript backends, built on Pino.",
   "type": "module",
@@ -82,12 +82,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/joinremba/catalog.git"
+    "url": "git+https://github.com/joinremba/evtlog.git"
   },
   "bugs": {
-    "url": "https://github.com/joinremba/catalog/issues"
+    "url": "https://github.com/joinremba/evtlog/issues"
   },
-  "homepage": "https://github.com/joinremba/catalog#readme",
+  "homepage": "https://github.com/joinremba/evtlog#readme",
   "keywords": [
     "logging",
     "pino",
@@ -103,7 +103,6 @@
     "bun": ">=1.3.1"
   },
   "dependencies": {
-    "@joinremba/core": "^0.4.0",
     "pino": "^10.3.1",
     "pino-roll": "^4.0.0"
   },

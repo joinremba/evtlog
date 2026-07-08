@@ -20,9 +20,9 @@ Steps to reproduce the behaviour:
 
 ```ts
 // Code snippet that reproduces the issue
-import { createLogger } from "@joinremba/catalog";
+import { createCatalog } from "evtlog";
 
-const log = createLogger({ ... });
+const log = createCatalog({ ... });
 log.info({ ... });
 ```
 

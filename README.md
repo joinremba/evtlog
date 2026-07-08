@@ -1,8 +1,8 @@
-# catalog
+# evtlog
 
-[![npm version](https://img.shields.io/npm/v/@joinremba/catalog)](https://www.npmjs.com/package/@joinremba/catalog)
-[![License](https://img.shields.io/npm/l/@joinremba/catalog)](LICENSE)
-[![CI](https://github.com/joinremba/catalog/actions/workflows/ci.yml/badge.svg)](https://github.com/joinremba/catalog/actions/workflows/ci.yml)
+[![npm version](https://img.shields.io/npm/v/evtlog)](https://www.npmjs.com/package/evtlog)
+[![License](https://img.shields.io/npm/l/evtlog)](LICENSE)
+[![CI](https://github.com/joinremba/evtlog/actions/workflows/ci.yml/badge.svg)](https://github.com/joinremba/evtlog/actions/workflows/ci.yml)
 [![Bun](https://img.shields.io/badge/bun-1.3%2B-%23ffc83d?logo=bun)](https://bun.sh)
 
 Production-ready logging and error event layer for TypeScript backends, built on [Pino](https://getpino.io/).
@@ -21,13 +21,13 @@ Production-ready logging and error event layer for TypeScript backends, built on
 - **Webhook forwarding** — Batch log delivery to external webhook endpoints with retry and HMAC signing.
 - **OpenTelemetry bridge** — Correlate logs with active span context.
 - **Log sampling** — Deterministic or custom sampling to control volume.
-- **Cloud log ingestion** — Optional `@joinremba/core` client for remote log batching.
+- **Cloud log ingestion** — Optional client for remote log batching.
 - **Strict TypeScript** — Full type exports for `Catalog`, `CatalogOptions`, `LogLevel`, and more.
 
 ## Installation
 
 ```sh
-bun add @joinremba/catalog
+bun add evtlog
 ```
 
 Requires **Bun >= 1.3.1**.
@@ -35,7 +35,7 @@ Requires **Bun >= 1.3.1**.
 ## Quick Start
 
 ```ts
-import { createCatalog } from "@joinremba/catalog";
+import { createCatalog } from "evtlog";
 
 const catalog = createCatalog({
   service: "my-api",
@@ -126,7 +126,7 @@ const catalog = createCatalog({
 Use `envTransport()` to automatically configure the right transport per `NODE_ENV`:
 
 ```ts
-import { createCatalog, envTransport } from "@joinremba/catalog";
+import { createCatalog, envTransport } from "evtlog";
 
 const catalog = createCatalog({
   service: "my-api",
@@ -153,7 +153,7 @@ const catalog = createCatalog({
 Import from the subpath:
 
 ```ts
-import { envTransport } from "@joinremba/catalog/env-transport";
+import { envTransport } from "evtlog/env-transport";
 ```
 
 ## Redaction
@@ -185,7 +185,7 @@ const catalog = createCatalog({
 Converts an `Error` into a plain object safe for API responses — strips stack traces:
 
 ```ts
-import { safeError, createCatalog } from "@joinremba/catalog";
+import { safeError, createCatalog } from "evtlog";
 
 try {
   await riskyOperation();
@@ -236,33 +236,12 @@ Framework adapters map HTTP status to log level automatically:
 | 400–499      | `warn`    |
 | 500+         | `error`   |
 
-## Integration with `@joinremba/core`
-
-Pass a `Client` instance for cloud log ingestion. Logs buffer locally and flush remotely:
-
-```ts
-import { createCatalog } from "@joinremba/catalog";
-import { createClient } from "@joinremba/core";
-
-const client = createClient({ apiKey: process.env.REMBA_API_KEY });
-
-const catalog = createCatalog({
-  service: "my-api",
-  environment: "production",
-  client, // enables remote ingestion
-  transport: { target: "pino-roll", options: { file: "./logs/out.log", frequency: "daily" } },
-});
-
-catalog.info("user.created", { userId: "usr_abc123" });
-// Flushes every 100 events or on process exit
-```
-
 ## Sub-Modules
 
 ### Audit
 
 ```ts
-import { auditLogger } from "@joinremba/catalog/audit";
+import { auditLogger } from "evtlog/audit";
 const audit = auditLogger(catalog);
 audit.log({
   action: "user.role_changed",
@@ -277,7 +256,7 @@ audit.log({
 ### Security
 
 ```ts
-import { securityLogger } from "@joinremba/catalog/security";
+import { securityLogger } from "evtlog/security";
 const security = securityLogger(catalog);
 security.log({
   action: "login.failed",
@@ -291,7 +270,7 @@ security.log({
 ### Webhook Forwarding
 
 ```ts
-import { webhookLogger } from "@joinremba/catalog/webhook";
+import { webhookLogger } from "evtlog/webhook";
 const webhook = webhookLogger(catalog, {
   targets: [
     {
@@ -312,7 +291,7 @@ webhook.stop(); // flush remaining on shutdown
 ### OpenTelemetry Bridge
 
 ```ts
-import { otelBridge } from "@joinremba/catalog/otel";
+import { otelBridge } from "evtlog/otel";
 const otelCatalog = otelBridge(catalog, {
   api: trace, // from @opentelemetry/api
   captureSpanEvents: true,
@@ -324,7 +303,7 @@ otelCatalog.info("user.created", { userId: "usr_abc123" });
 ### Log Sampling
 
 ```ts
-import { samplingCatalog } from "@joinremba/catalog/sampling";
+import { samplingCatalog } from "evtlog/sampling";
 const sampled = samplingCatalog(catalog, {
   rate: 0.1, // log 10% of events
   level: "debug",
@@ -337,12 +316,12 @@ When running multiple services, you need a way to view logs from all of them in 
 
 ### 1. Webhook Aggregator
 
-Each service forward logs to a central receiver using `@joinremba/catalog/webhook`. The receiver collects logs from all services and writes them to a shared sink.
+Each service forward logs to a central receiver using `evtlog/webhook`. The receiver collects logs from all services and writes them to a shared sink.
 
 ```ts
 // Each microservice:
-import { createCatalog } from "@joinremba/catalog";
-import { webhookLogger } from "@joinremba/catalog/webhook";
+import { createCatalog } from "evtlog";
+import { webhookLogger } from "evtlog/webhook";
 
 const catalog = createCatalog({
   service: "user-service", // different name per service
@@ -393,10 +372,10 @@ Catalog does not include built-in alerting, but it provides the hooks to trigger
 
 ### Via Webhook Forwarding
 
-Use `@joinremba/catalog/webhook` to send errors to any alert endpoint:
+Use `evtlog/webhook` to send errors to any alert endpoint:
 
 ```ts
-import { webhookLogger } from "@joinremba/catalog/webhook";
+import { webhookLogger } from "evtlog/webhook";
 
 const alerts = webhookLogger(catalog, {
   targets: [
@@ -419,10 +398,6 @@ alerts.error("payment.provider_down", { provider: "stripe" });
 // Delivered to PagerDuty + Slack within ~2 seconds
 ```
 
-### Via Cloud Ingestion
-
-If you use the `@joinremba/core` client, you can set up alert rules in the Remba cloud dashboard — define thresholds (e.g., >5 errors/min) and notification channels (email, Slack, PagerDuty).
-
 ### Manual Error Tracking
 
 For custom monitoring, pipe the NDJSON output to a log processor:
@@ -440,7 +415,7 @@ Level values: `10`=trace, `20`=debug, `30`=info, `40`=warn, `50`=error, `60`=fat
 ### Hono
 
 ```ts
-import { requestIdMiddleware, httpLoggerMiddleware } from "@joinremba/catalog/adapters/hono";
+import { requestIdMiddleware, httpLoggerMiddleware } from "evtlog/adapters/hono";
 app.use("*", requestIdMiddleware(catalog));
 app.use("*", httpLoggerMiddleware(catalog, { excludePaths: ["/health"] }));
 ```
@@ -448,7 +423,7 @@ app.use("*", httpLoggerMiddleware(catalog, { excludePaths: ["/health"] }));
 ### Express
 
 ```ts
-import { requestIdMiddleware, httpLoggerMiddleware } from "@joinremba/catalog/adapters/express";
+import { requestIdMiddleware, httpLoggerMiddleware } from "evtlog/adapters/express";
 app.use(requestIdMiddleware(catalog));
 app.use(httpLoggerMiddleware(catalog));
 ```
@@ -456,7 +431,7 @@ app.use(httpLoggerMiddleware(catalog));
 ### Fastify
 
 ```ts
-import { requestIdHook, httpLoggerHook } from "@joinremba/catalog/adapters/fastify";
+import { requestIdHook, httpLoggerHook } from "evtlog/adapters/fastify";
 fastify.addHook("onRequest", requestIdHook(catalog));
 fastify.addHook("onRequest", httpLoggerHook(catalog));
 ```
@@ -474,20 +449,13 @@ fastify.addHook("onRequest", httpLoggerHook(catalog));
 | `destination` | `PinoDestination`                        | —              | Custom writable stream (overrides `transport`).           |
 | `mixin`       | `() => Record<string, unknown>`          | —              | Function returning extra fields to merge into every log.  |
 | `base`        | `Record<string, unknown>`                | —              | Static base fields for every log entry.                   |
-| `client`      | `Client`                                 | —              | `@joinremba/core` client for cloud log ingestion.         |
 
 ## TypeScript
 
 All types are exported from the package root:
 
 ```ts
-import type {
-  Catalog,
-  CatalogOptions,
-  LogLevel,
-  TransportOptions,
-  PinoDestination,
-} from "@joinremba/catalog";
+import type { Catalog, CatalogOptions, LogLevel, TransportOptions, PinoDestination } from "evtlog";
 ```
 
 | Type               | Description                                                    |
@@ -501,37 +469,36 @@ import type {
 Subpackage types:
 
 ```ts
-import type { AuditEvent } from "@joinremba/catalog/audit";
-import type { SecurityEvent } from "@joinremba/catalog/security";
-import type { WebhookOptions, WebhookTarget } from "@joinremba/catalog/webhook";
-import type { OtelBridgeOptions } from "@joinremba/catalog/otel";
-import type { SamplingOptions } from "@joinremba/catalog/sampling";
-import type { EnvTransportResult } from "@joinremba/catalog/env-transport";
-import type { HonoRequestIdOptions, HttpLogOptions } from "@joinremba/catalog/adapters/hono";
-import type { ExpressRequestIdOptions } from "@joinremba/catalog/adapters/express";
-import type { FastifyRequestIdOptions } from "@joinremba/catalog/adapters/fastify";
+import type { AuditEvent } from "evtlog/audit";
+import type { SecurityEvent } from "evtlog/security";
+import type { WebhookOptions, WebhookTarget } from "evtlog/webhook";
+import type { OtelBridgeOptions } from "evtlog/otel";
+import type { SamplingOptions } from "evtlog/sampling";
+import type { EnvTransportResult } from "evtlog/env-transport";
+import type { HonoRequestIdOptions, HttpLogOptions } from "evtlog/adapters/hono";
+import type { ExpressRequestIdOptions } from "evtlog/adapters/express";
+import type { FastifyRequestIdOptions } from "evtlog/adapters/fastify";
 ```
 
 ## Package Exports
 
-| Path                                  | Contents                           |
-| ------------------------------------- | ---------------------------------- |
-| `@joinremba/catalog`                  | Main `createCatalog` + types       |
-| `@joinremba/catalog/audit`            | `auditLogger` + `AuditEvent`       |
-| `@joinremba/catalog/security`         | `securityLogger` + `SecurityEvent` |
-| `@joinremba/catalog/webhook`          | `webhookLogger` + types            |
-| `@joinremba/catalog/otel`             | `otelBridge` + types               |
-| `@joinremba/catalog/sampling`         | `samplingCatalog` + types          |
-| `@joinremba/catalog/env-transport`    | `envTransport`                     |
-| `@joinremba/catalog/adapters/hono`    | Hono middleware                    |
-| `@joinremba/catalog/adapters/express` | Express middleware                 |
-| `@joinremba/catalog/adapters/fastify` | Fastify hooks                      |
+| Path                      | Contents                           |
+| ------------------------- | ---------------------------------- |
+| `evtlog`                  | Main `createCatalog` + types       |
+| `evtlog/audit`            | `auditLogger` + `AuditEvent`       |
+| `evtlog/security`         | `securityLogger` + `SecurityEvent` |
+| `evtlog/webhook`          | `webhookLogger` + types            |
+| `evtlog/otel`             | `otelBridge` + types               |
+| `evtlog/sampling`         | `samplingCatalog` + types          |
+| `evtlog/env-transport`    | `envTransport`                     |
+| `evtlog/adapters/hono`    | Hono middleware                    |
+| `evtlog/adapters/express` | Express middleware                 |
+| `evtlog/adapters/fastify` | Fastify hooks                      |
 
 ## Related Packages
 
-- [@joinremba/core](https://github.com/joinremba/core) — Cloud log ingestion client.
-- [@joinremba/beacon](https://github.com/joinremba/beacon) — Environment validation, config, secrets, and feature gates.
-- [@joinremba/gate](https://github.com/joinremba/gate) — API safety layer: validation, responses, idempotency, rate limiting, and API keys.
+- [envoker](https://github.com/joinremba/envoker) — Environment validation, config, secrets, and feature gates.
+- [permcheck](https://github.com/joinremba/permcheck) — API safety layer: validation, responses, idempotency, rate limiting, and API keys.
 
 ## Contributing
 

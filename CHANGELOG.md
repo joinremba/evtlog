@@ -24,9 +24,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- `client?: Client` option to `createCatalog()` for cloud log ingestion via `@joinremba/core`
+- `client?: Client` option to `createCatalog()` for cloud log ingestion
 - Automatic log batching — events are buffered and flushed to `client.ingestLogs()` when buffer reaches 100 events or on process exit
-- `@joinremba/core` dependency — type-safe client for cloud features
+- Cloud ingestion client dependency — type-safe client for cloud features
 
 ## [0.3.0] — 2026-06-12
 
