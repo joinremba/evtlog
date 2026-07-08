@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { createCatalog } from "../index";
+import { createEvtlog } from "../index";
 import { requestIdHook, httpLoggerHook } from "./fastify";
 
 function mockRequest() {
@@ -17,20 +17,20 @@ function mockReply(statusCode = 200) {
 }
 
 test("requestIdHook sets requestId", () => {
-  const catalog = createCatalog({ service: "test" });
+  const evtlog = createEvtlog({ service: "test" });
   const req = mockRequest();
   const reply = mockReply();
-  requestIdHook(catalog)(req as any, reply as any, () => {});
+  requestIdHook(evtlog)(req as any, reply as any, () => {});
   expect((req as any).requestId).toBeDefined();
 });
 
 test("httpLoggerHook skips excluded paths", () => {
-  const catalog = createCatalog({ service: "test" });
+  const evtlog = createEvtlog({ service: "test" });
   const req = mockRequest();
   req.url = "/health";
   const reply = mockReply();
   let called = false;
-  httpLoggerHook(catalog)(req as any, reply as any, () => {
+  httpLoggerHook(evtlog)(req as any, reply as any, () => {
     called = true;
   });
   expect(called).toBe(true);

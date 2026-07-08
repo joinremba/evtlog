@@ -1,4 +1,4 @@
-import type { Catalog } from "./index";
+import type { Evtlog } from "./index";
 
 export interface AuditEvent {
   action: string;
@@ -10,10 +10,10 @@ export interface AuditEvent {
   reason?: string;
 }
 
-export function auditLogger(catalog: Catalog) {
+export function auditLogger(evtlog: Evtlog) {
   return {
     log(event: AuditEvent) {
-      catalog.info("audit." + event.action, {
+      evtlog.info("audit." + event.action, {
         audit: true,
         actor: event.actor,
         resource: event.resource,

@@ -23,7 +23,7 @@ Even with built-in redaction support, you should never intentionally log sensiti
 Always configure the `redact` option when creating a logger to strip known sensitive fields:
 
 ```ts
-const log = createCatalog({
+const log = createEvtlog({
   service: "my-app",
   redact: ["password", "authorization", "creditCard", "ssn", "secret"],
 });

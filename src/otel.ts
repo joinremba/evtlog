@@ -1,4 +1,4 @@
-import type { Catalog, LogLevel } from "./index";
+import type { Evtlog, LogLevel } from "./index";
 
 export interface OtelSpanContext {
   traceId: string;
@@ -25,7 +25,7 @@ export interface OtelBridgeOptions {
   spanAttributePrefix?: string;
 }
 
-export function otelBridge(catalog: Catalog, options: OtelBridgeOptions) {
+export function otelBridge(evtlog: Evtlog, options: OtelBridgeOptions) {
   const { api, captureSpanEvents = false, spanAttributePrefix = "log" } = options;
 
   function withTraceContext(
@@ -56,14 +56,14 @@ export function otelBridge(catalog: Catalog, options: OtelBridgeOptions) {
     return (first: string | Record<string, unknown>, second?: Record<string, unknown>) => {
       const { first: f, data: d } = withTraceContext(first, second);
       if (typeof f === "string") {
-        (catalog[method] as (msg: string, data?: Record<string, unknown>) => void)(f, d);
+        (evtlog[method] as (msg: string, data?: Record<string, unknown>) => void)(f, d);
       } else if (d) {
-        (catalog[method] as (msg: string, data?: Record<string, unknown>) => void)("", {
+        (evtlog[method] as (msg: string, data?: Record<string, unknown>) => void)("", {
           ...f,
           ...d,
         });
       } else {
-        (catalog[method] as (data: Record<string, unknown>) => void)(f);
+        (evtlog[method] as (data: Record<string, unknown>) => void)(f);
       }
     };
   }
@@ -76,13 +76,13 @@ export function otelBridge(catalog: Catalog, options: OtelBridgeOptions) {
     error: adapt("error"),
     fatal: adapt("fatal"),
     child(bindings: Record<string, unknown>) {
-      return otelBridge(catalog.child(bindings), options);
+      return otelBridge(evtlog.child(bindings), options);
     },
     scope(name: string) {
-      return otelBridge(catalog.scope(name), options);
+      return otelBridge(evtlog.scope(name), options);
     },
     get level(): LogLevel {
-      return catalog.level;
+      return evtlog.level;
     },
   };
 }

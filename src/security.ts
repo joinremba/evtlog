@@ -1,4 +1,4 @@
-import type { Catalog } from "./index";
+import type { Evtlog } from "./index";
 
 export interface SecurityEvent {
   action: string;
@@ -9,10 +9,10 @@ export interface SecurityEvent {
   severity: "low" | "medium" | "high" | "critical";
 }
 
-export function securityLogger(catalog: Catalog) {
+export function securityLogger(evtlog: Evtlog) {
   return {
     log(event: SecurityEvent) {
-      catalog.warn("security." + event.action, {
+      evtlog.warn("security." + event.action, {
         security: true,
         actor: event.actor,
         ip: event.ip,

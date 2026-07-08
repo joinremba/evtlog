@@ -19,8 +19,8 @@ Please note that this project is governed by a [Code of Conduct](CODE_OF_CONDUCT
 2. Clone your fork:
 
    ```sh
-   git clone https://github.com/your-username/catalog.git
-   cd catalog
+   git clone https://github.com/your-username/evtlog.git
+   cd evtlog
    ```
 
 3. Install dependencies:
@@ -85,10 +85,10 @@ Types include: `feat`, `fix`, `chore`, `docs`, `test`, `refactor`, `style`, `ci`
 
 Examples:
 
-- `feat(catalog): add file transport rotation support`
-- `fix(catalog): handle undefined redact paths gracefully`
-- `docs(catalog): update API reference in README`
-- `test(catalog): add coverage for multi-transport config`
+- `feat(evtlog): add file transport rotation support`
+- `fix(evtlog): handle undefined redact paths gracefully`
+- `docs(evtlog): update API reference in README`
+- `test(evtlog): add coverage for multi-transport config`
 
 ## Reporting Issues
 

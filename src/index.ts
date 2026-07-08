@@ -24,7 +24,7 @@ export interface PinoDestination {
   write: (data: string | Uint8Array) => void;
 }
 
-export interface CatalogOptions {
+export interface EvtlogOptions {
   service: string;
   level?: LogLevel;
   redact?: string[];
@@ -37,7 +37,7 @@ export interface CatalogOptions {
   client?: Client;
 }
 
-export interface Catalog {
+export interface Evtlog {
   trace(msg: string, data?: Record<string, unknown>): void;
   trace(data: Record<string, unknown>): void;
   debug(msg: string, data?: Record<string, unknown>): void;
@@ -50,15 +50,15 @@ export interface Catalog {
   error(data: Record<string, unknown>): void;
   fatal(msg: string, data?: Record<string, unknown>): void;
   fatal(data: Record<string, unknown>): void;
-  child(bindings: Record<string, unknown>): Catalog;
+  child(bindings: Record<string, unknown>): Evtlog;
   /** Create a scoped child logger bound to a module/package name.
    *  Equivalent to `.child({ module: name })` — every log entry from the
    *  returned logger includes `"module":"name"`. */
-  scope(name: string): Catalog;
+  scope(name: string): Evtlog;
   /** Create a child logger that resolves context at log time via a function.
    *  The function is called fresh on every log entry, so it picks up the
    *  current async context (e.g. AsyncLocalStorage). */
-  withContext(fn: () => Record<string, unknown>): Catalog;
+  withContext(fn: () => Record<string, unknown>): Evtlog;
   /** Get or set the minimum log level at runtime. */
   level: LogLevel;
 }
@@ -137,7 +137,7 @@ const serializer: LoggerOptions["serializers"] = {
   error: pino.stdSerializers.err,
 };
 
-export function createCatalog(options: CatalogOptions): Catalog {
+export function createEvtlog(options: EvtlogOptions): Evtlog {
   const {
     service,
     level,
@@ -208,7 +208,7 @@ export function createCatalog(options: CatalogOptions): Catalog {
     process.on("beforeExit", flush);
   }
 
-  const buildChild = (parentLogger: PinoLogger): Catalog => {
+  const buildChild = (parentLogger: PinoLogger): Evtlog => {
     const childAdapt = (method: PinoLevel) => {
       return (first: string | Record<string, unknown>, second?: Record<string, unknown>) => {
         if (typeof first === "string") {
@@ -234,15 +234,15 @@ export function createCatalog(options: CatalogOptions): Catalog {
       error: childAdapt("error"),
       fatal: childAdapt("fatal"),
 
-      child(bindings: Record<string, unknown>): Catalog {
+      child(bindings: Record<string, unknown>): Evtlog {
         return buildChild(parentLogger.child(bindings));
       },
 
-      scope(name: string): Catalog {
+      scope(name: string): Evtlog {
         return buildChild(parentLogger.child({ module: name }));
       },
 
-      withContext(fn: () => Record<string, unknown>): Catalog {
+      withContext(fn: () => Record<string, unknown>): Evtlog {
         const childLogger = parentLogger.child({});
         const adaptWithContext =
           (method: PinoLevel) =>
@@ -265,13 +265,13 @@ export function createCatalog(options: CatalogOptions): Catalog {
           warn: adaptWithContext("warn"),
           error: adaptWithContext("error"),
           fatal: adaptWithContext("fatal"),
-          child(bindings: Record<string, unknown>): Catalog {
+          child(bindings: Record<string, unknown>): Evtlog {
             return buildChild(childLogger.child(bindings));
           },
-          scope(name: string): Catalog {
+          scope(name: string): Evtlog {
             return buildChild(childLogger.child({ module: name }));
           },
-          withContext: (newFn: () => Record<string, unknown>): Catalog =>
+          withContext: (newFn: () => Record<string, unknown>): Evtlog =>
             buildChild(childLogger.child({})).withContext(newFn),
           get level(): LogLevel {
             return childLogger.level as LogLevel;
@@ -292,9 +292,9 @@ export function createCatalog(options: CatalogOptions): Catalog {
     };
   };
 
-  const catalog: Catalog = buildChild(logger);
+  const evtlog: Evtlog = buildChild(logger);
 
-  return catalog;
+  return evtlog;
 }
 
 export function safeError(error: unknown): Record<string, unknown> {
@@ -310,4 +310,4 @@ export function safeError(error: unknown): Record<string, unknown> {
 
 export { envTransport } from "./env-transport";
 
-export default createCatalog;
+export default createEvtlog;

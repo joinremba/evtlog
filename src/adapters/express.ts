@@ -1,4 +1,4 @@
-import type { Catalog } from "../index";
+import type { Evtlog } from "../index";
 
 interface ExpressRequest {
   method: string;
@@ -22,7 +22,7 @@ export interface ExpressRequestIdOptions {
   generate?: () => string;
 }
 
-export function requestIdMiddleware(_catalog: Catalog, options?: ExpressRequestIdOptions) {
+export function requestIdMiddleware(_evtlog: Evtlog, options?: ExpressRequestIdOptions) {
   const headerName = options?.header?.toLowerCase() ?? "x-request-id";
   const generate = options?.generate ?? (() => crypto.randomUUID());
 
@@ -37,14 +37,14 @@ export interface HttpLogOptions {
   excludePaths?: string[];
 }
 
-export function httpLoggerMiddleware(catalog: Catalog, options?: HttpLogOptions) {
+export function httpLoggerMiddleware(evtlog: Evtlog, options?: HttpLogOptions) {
   const exclude = new Set(options?.excludePaths ?? ["/health", "/favicon.ico"]);
 
   return (req: ExpressRequest, res: ExpressResponse, next: ExpressNext) => {
     if (exclude.has(req.path)) return next();
 
     const requestId = (req as unknown as Record<string, unknown>).requestId as string | undefined;
-    const log = requestId ? catalog.child({ requestId }) : catalog;
+    const log = requestId ? evtlog.child({ requestId }) : evtlog;
     const start = performance.now();
     const method = req.method;
     const path = req.path;

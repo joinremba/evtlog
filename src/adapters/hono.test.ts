@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { createCatalog } from "../index";
+import { createEvtlog } from "../index";
 import { requestIdMiddleware, httpLoggerMiddleware } from "./hono";
 
 interface MockCtx {
@@ -34,10 +34,10 @@ function mockHonoContext(overrides?: {
 }
 
 test("requestIdMiddleware sets requestId on context", async () => {
-  const catalog = createCatalog({ service: "test" });
+  const evtlog = createEvtlog({ service: "test" });
   const c = mockHonoContext();
   let called = false;
-  await requestIdMiddleware(catalog)(c, async () => {
+  await requestIdMiddleware(evtlog)(c, async () => {
     called = true;
   });
   expect(c.get("requestId")).toBeDefined();
@@ -45,17 +45,17 @@ test("requestIdMiddleware sets requestId on context", async () => {
 });
 
 test("requestIdMiddleware preserves existing x-request-id header", async () => {
-  const catalog = createCatalog({ service: "test" });
+  const evtlog = createEvtlog({ service: "test" });
   const c = mockHonoContext({ header: () => "from-header" });
-  await requestIdMiddleware(catalog)(c, async () => {});
+  await requestIdMiddleware(evtlog)(c, async () => {});
   expect(c.get("requestId")).toBe("from-header");
 });
 
 test("httpLoggerMiddleware skips excluded paths", async () => {
-  const catalog = createCatalog({ service: "test" });
+  const evtlog = createEvtlog({ service: "test" });
   const c = mockHonoContext({ path: "/health" });
   let called = false;
-  await httpLoggerMiddleware(catalog)(c, async () => {
+  await httpLoggerMiddleware(evtlog)(c, async () => {
     called = true;
   });
   expect(called).toBe(true);

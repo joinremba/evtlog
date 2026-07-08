@@ -1,10 +1,10 @@
 import { expect, test } from "bun:test";
-import { createCatalog } from "./index";
+import { createEvtlog } from "./index";
 import { webhookLogger } from "./webhook";
 
 test("webhookLogger enqueues events without throwing", () => {
-  const catalog = createCatalog({ service: "test" });
-  const wh = webhookLogger(catalog, {
+  const evtlog = createEvtlog({ service: "test" });
+  const wh = webhookLogger(evtlog, {
     targets: [{ url: "https://hooks.example.com/logs" }],
   });
 
@@ -17,8 +17,8 @@ test("webhookLogger enqueues events without throwing", () => {
 });
 
 test("webhookLogger filters by target level", () => {
-  const catalog = createCatalog({ service: "test" });
-  const wh = webhookLogger(catalog, {
+  const evtlog = createEvtlog({ service: "test" });
+  const wh = webhookLogger(evtlog, {
     targets: [{ url: "https://hooks.example.com/errors", level: "error" }],
   });
 

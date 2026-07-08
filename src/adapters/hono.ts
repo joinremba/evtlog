@@ -1,4 +1,4 @@
-import type { Catalog } from "../index";
+import type { Evtlog } from "../index";
 
 interface HonoContext {
   req: {
@@ -17,7 +17,7 @@ export interface HonoRequestIdOptions {
   generate?: () => string;
 }
 
-export function requestIdMiddleware(_catalog: Catalog, options?: HonoRequestIdOptions) {
+export function requestIdMiddleware(_evtlog: Evtlog, options?: HonoRequestIdOptions) {
   const headerName = options?.header?.toLowerCase() ?? "x-request-id";
   const generate = options?.generate ?? (() => crypto.randomUUID());
 
@@ -33,14 +33,14 @@ export interface HttpLogOptions {
   excludePaths?: string[];
 }
 
-export function httpLoggerMiddleware(catalog: Catalog, options?: HttpLogOptions) {
+export function httpLoggerMiddleware(evtlog: Evtlog, options?: HttpLogOptions) {
   const exclude = new Set(options?.excludePaths ?? ["/health", "/favicon.ico"]);
 
   return (c: HonoContext, next: () => Promise<void>) => {
     if (exclude.has(c.req.path)) return next();
 
     const requestId = c.get("requestId") as string | undefined;
-    const log = requestId ? catalog.child({ requestId }) : catalog;
+    const log = requestId ? evtlog.child({ requestId }) : evtlog;
     const start = performance.now();
     const method = c.req.method;
     const path = c.req.path;

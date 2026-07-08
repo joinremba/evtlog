@@ -1,4 +1,4 @@
-import type { Catalog } from "../index";
+import type { Evtlog } from "../index";
 
 interface FastifyRequest {
   method: string;
@@ -17,7 +17,7 @@ export interface FastifyRequestIdOptions {
   generate?: () => string;
 }
 
-export function requestIdHook(_catalog: Catalog, options?: FastifyRequestIdOptions) {
+export function requestIdHook(_evtlog: Evtlog, options?: FastifyRequestIdOptions) {
   const headerName = options?.header?.toLowerCase() ?? "x-request-id";
   const generate = options?.generate ?? (() => crypto.randomUUID());
 
@@ -32,7 +32,7 @@ export interface HttpLogOptions {
   excludePaths?: string[];
 }
 
-export function httpLoggerHook(catalog: Catalog, options?: HttpLogOptions) {
+export function httpLoggerHook(evtlog: Evtlog, options?: HttpLogOptions) {
   const exclude = new Set(options?.excludePaths ?? ["/health", "/favicon.ico"]);
 
   return (request: FastifyRequest, reply: FastifyReply, done: () => void) => {
@@ -41,7 +41,7 @@ export function httpLoggerHook(catalog: Catalog, options?: HttpLogOptions) {
     const requestId = (request as unknown as Record<string, unknown>).requestId as
       | string
       | undefined;
-    const log = requestId ? catalog.child({ requestId }) : catalog;
+    const log = requestId ? evtlog.child({ requestId }) : evtlog;
     const start = performance.now();
     const method = request.method;
     const url = request.url;

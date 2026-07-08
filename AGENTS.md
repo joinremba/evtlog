@@ -12,9 +12,9 @@ bun run build             # Build to dist/
 ## Architecture
 
 - **`evtlog`** — Production-ready logging and error event layer for TypeScript backends, built on Pino.
-- **`src/index.ts`** — `createCatalog(options)` → returns `Catalog` with `trace|debug|info|warn|error|fatal` log methods, `child()`, `scope()`, `withContext()`.
-- **`src/audit.ts`** — Audit event logger (`auditLogger(catalog)`).
-- **`src/security.ts`** — Security event logger (`securityLogger(catalog)`).
+- **`src/index.ts`** — `createEvtlog(options)` → returns `Evtlog` with `trace|debug|info|warn|error|fatal` log methods, `child()`, `scope()`, `withContext()`.
+- **`src/audit.ts`** — Audit event logger (`auditLogger(evtlog)`).
+- **`src/security.ts`** — Security event logger (`securityLogger(evtlog)`).
 - **`src/webhook.ts`** — Webhook log forwarding with HMAC SHA-256 signing and batching.
 - **`src/otel.ts`** — OpenTelemetry bridge injecting trace context into log entries.
 - **`src/sampling.ts`** — Deterministic log sampling.
@@ -23,9 +23,9 @@ bun run build             # Build to dist/
 
 ## Patterns
 
-- **Named exports only** (no `export default` except `index.ts` which defaults to `createCatalog`).
-- **Event-name-first API** — `catalog.info("event.name", { data })` wraps Pino internally.
+- **Named exports only** (no `export default` except `index.ts` which defaults to `createEvtlog`).
+- **Event-name-first API** — `evtlog.info("event.name", { data })` wraps Pino internally.
 - **Built-in redaction** — 40+ sensitive field names redacted recursively, case-insensitively from all log output.
-- **Framework adapters are independent** — each receives a Catalog instance; no framework coupling.
+- **Framework adapters are independent** — each receives a Evtlog instance; no framework coupling.
 - **Cloud batching** — When `client` is provided, events are buffered and flushed via `client.ingestLogs()`.
 - **All source in `src/`**, tests colocated: `src/*.test.ts`.

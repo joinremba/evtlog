@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { createCatalog } from "./index";
+import { createEvtlog } from "./index";
 import { otelBridge } from "./otel";
 import type { OtelApi } from "./otel";
 
@@ -21,9 +21,9 @@ function mockOtelApi(): OtelApi {
 }
 
 test("otelBridge injects trace context", () => {
-  const catalog = createCatalog({ service: "test" });
+  const evtlog = createEvtlog({ service: "test" });
   const otel = mockOtelApi();
-  const bridged = otelBridge(catalog, { api: otel });
+  const bridged = otelBridge(evtlog, { api: otel });
 
   expect(() => {
     bridged.info("app.started", { version: "1.0.0" });
@@ -31,9 +31,9 @@ test("otelBridge injects trace context", () => {
 });
 
 test("otelBridge child preserves bridging", () => {
-  const catalog = createCatalog({ service: "test" });
+  const evtlog = createEvtlog({ service: "test" });
   const otel = mockOtelApi();
-  const bridged = otelBridge(catalog, { api: otel });
+  const bridged = otelBridge(evtlog, { api: otel });
   const child = bridged.child({ requestId: "req-1" });
 
   expect(() => {

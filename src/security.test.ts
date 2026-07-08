@@ -1,10 +1,10 @@
 import { expect, test } from "bun:test";
-import { createCatalog } from "./index";
+import { createEvtlog } from "./index";
 import { securityLogger } from "./security";
 
 test("securityLogger logs without throwing", () => {
-  const catalog = createCatalog({ service: "test" });
-  const log = securityLogger(catalog);
+  const evtlog = createEvtlog({ service: "test" });
+  const log = securityLogger(evtlog);
 
   expect(() =>
     log.log({
@@ -17,7 +17,7 @@ test("securityLogger logs without throwing", () => {
 
 test("securityLogger includes all fields", () => {
   const lines: Record<string, unknown>[] = [];
-  const catalog = createCatalog({
+  const evtlog = createEvtlog({
     service: "test",
     destination: {
       write(data) {
@@ -25,7 +25,7 @@ test("securityLogger includes all fields", () => {
       },
     },
   });
-  const log = securityLogger(catalog);
+  const log = securityLogger(evtlog);
 
   log.log({
     action: "api.key_created",

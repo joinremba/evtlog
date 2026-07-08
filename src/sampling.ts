@@ -1,4 +1,4 @@
-import type { Catalog, LogLevel } from "./index";
+import type { Evtlog, LogLevel } from "./index";
 
 type SamplerFn = (level: LogLevel, message: string, data?: Record<string, unknown>) => boolean;
 
@@ -30,7 +30,7 @@ function deterministicSampler(
   };
 }
 
-export function samplingCatalog(catalog: Catalog, options: SamplingOptions) {
+export function samplingEvtlog(evtlog: Evtlog, options: SamplingOptions) {
   const { rate, level: levelFilter, sampler, keyFn } = options;
   const levels: LogLevel[] = ["trace", "debug", "info", "warn", "error", "fatal"];
   const minLevelIdx = levelFilter ? levels.indexOf(levelFilter) : 0;
@@ -50,9 +50,9 @@ export function samplingCatalog(catalog: Catalog, options: SamplingOptions) {
       if (!shouldSample(method, message, data)) return;
 
       if (typeof first === "string") {
-        (catalog[method] as (msg: string, data?: Record<string, unknown>) => void)(first, second);
+        (evtlog[method] as (msg: string, data?: Record<string, unknown>) => void)(first, second);
       } else {
-        (catalog[method] as (data: Record<string, unknown>) => void)(first);
+        (evtlog[method] as (data: Record<string, unknown>) => void)(first);
       }
     };
   }
@@ -65,13 +65,13 @@ export function samplingCatalog(catalog: Catalog, options: SamplingOptions) {
     error: adapt("error"),
     fatal: adapt("fatal"),
     child(bindings: Record<string, unknown>) {
-      return samplingCatalog(catalog.child(bindings), options);
+      return samplingEvtlog(evtlog.child(bindings), options);
     },
     scope(name: string) {
-      return samplingCatalog(catalog.scope(name), options);
+      return samplingEvtlog(evtlog.scope(name), options);
     },
     get level(): LogLevel {
-      return catalog.level;
+      return evtlog.level;
     },
   };
 }

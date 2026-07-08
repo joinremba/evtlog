@@ -9,7 +9,7 @@ Production-ready logging and error event layer for TypeScript backends, built on
 
 ## Features
 
-- **Event-name-first API** — `catalog.info("user.created", { userId })` for consistent, searchable log events.
+- **Event-name-first API** — `evtlog.info("user.created", { userId })` for consistent, searchable log events.
 - **Pino under the hood** — Ultra-fast structured JSON logging with full Pino transport ecosystem.
 - **Automatic sensitive data redaction** — Built-in denylist of PII, secrets, and credentials (email, phone, SSN, API keys, tokens, etc.), plus configurable path patterns.
 - **Multi-transport** — Single transport or array of targets for console, file, rolling files (pino-roll), or external sinks.
@@ -22,7 +22,7 @@ Production-ready logging and error event layer for TypeScript backends, built on
 - **OpenTelemetry bridge** — Correlate logs with active span context.
 - **Log sampling** — Deterministic or custom sampling to control volume.
 - **Cloud log ingestion** — Optional client for remote log batching.
-- **Strict TypeScript** — Full type exports for `Catalog`, `CatalogOptions`, `LogLevel`, and more.
+- **Strict TypeScript** — Full type exports for `Evtlog`, `EvtlogOptions`, `LogLevel`, and more.
 
 ## Installation
 
@@ -35,17 +35,17 @@ Requires **Bun >= 1.3.1**.
 ## Quick Start
 
 ```ts
-import { createCatalog } from "evtlog";
+import { createEvtlog } from "evtlog";
 
-const catalog = createCatalog({
+const evtlog = createEvtlog({
   service: "my-api",
   environment: process.env.NODE_ENV ?? "development",
   level: "info",
 });
 
-catalog.info("app.started", { port: 3000 });
-catalog.info("user.created", { userId: "usr_abc123" });
-catalog.error("payment.failed", { amount: 4999, currency: "USD" });
+evtlog.info("app.started", { port: 3000 });
+evtlog.info("user.created", { userId: "usr_abc123" });
+evtlog.error("payment.failed", { amount: 4999, currency: "USD" });
 ```
 
 Output is newline-delimited JSON (NDJSON) written to stdout by default. Pipe through `pino-pretty` for dev:
@@ -56,21 +56,21 @@ bun run start | bunx pino-pretty
 
 ## Log Levels
 
-| Level   | Method               | Usage                             |
-| ------- | -------------------- | --------------------------------- |
-| `trace` | `catalog.trace(...)` | Diagnostic detail during dev      |
-| `debug` | `catalog.debug(...)` | Development debugging             |
-| `info`  | `catalog.info(...)`  | Normal operational events         |
-| `warn`  | `catalog.warn(...)`  | Unexpected but handled situations |
-| `error` | `catalog.error(...)` | Recoverable errors                |
-| `fatal` | `catalog.fatal(...)` | Unrecoverable failures            |
+| Level   | Method              | Usage                             |
+| ------- | ------------------- | --------------------------------- |
+| `trace` | `evtlog.trace(...)` | Diagnostic detail during dev      |
+| `debug` | `evtlog.debug(...)` | Development debugging             |
+| `info`  | `evtlog.info(...)`  | Normal operational events         |
+| `warn`  | `evtlog.warn(...)`  | Unexpected but handled situations |
+| `error` | `evtlog.error(...)` | Recoverable errors                |
+| `fatal` | `evtlog.fatal(...)` | Unrecoverable failures            |
 
 Each method supports event-name-first, object-style, and event-only:
 
 ```ts
-catalog.info("user.created", { userId: "usr_abc123" }); // event-name-first
-catalog.info({ userId: "usr_abc123", message: "User created" }); // object-style
-catalog.info("app.started"); // event only
+evtlog.info("user.created", { userId: "usr_abc123" }); // event-name-first
+evtlog.info({ userId: "usr_abc123", message: "User created" }); // object-style
+evtlog.info("app.started"); // event only
 ```
 
 Set `level` to the minimum level to emit — events below it are dropped.
@@ -80,7 +80,7 @@ Set `level` to the minimum level to emit — events below it are dropped.
 Use `.child()` to bind context that appears in every log entry:
 
 ```ts
-const reqLog = catalog.child({ requestId: crypto.randomUUID() });
+const reqLog = evtlog.child({ requestId: crypto.randomUUID() });
 reqLog.info("request.handled", { path: "/api/users" });
 // Includes "requestId": "uuid-..."
 ```
@@ -88,7 +88,7 @@ reqLog.info("request.handled", { path: "/api/users" });
 Use `.scope(name)` for module-scoped logging:
 
 ```ts
-const dbLog = catalog.scope("database");
+const dbLog = evtlog.scope("database");
 dbLog.warn("query.slow", { query: "SELECT ..." });
 // Includes "module": "database"
 ```
@@ -100,7 +100,7 @@ Child loggers inherit all parent options (redaction, mixin, transport, etc.).
 ### Single Transport
 
 ```ts
-const catalog = createCatalog({
+const evtlog = createEvtlog({
   service: "my-app",
   transport: {
     target: "pino/file",
@@ -112,7 +112,7 @@ const catalog = createCatalog({
 ### Multi-Transport (array of targets)
 
 ```ts
-const catalog = createCatalog({
+const evtlog = createEvtlog({
   service: "my-app",
   transport: [
     { target: "pino/file", options: { destination: "./logs/app.log" } },
@@ -126,9 +126,9 @@ const catalog = createCatalog({
 Use `envTransport()` to automatically configure the right transport per `NODE_ENV`:
 
 ```ts
-import { createCatalog, envTransport } from "evtlog";
+import { createEvtlog, envTransport } from "evtlog";
 
-const catalog = createCatalog({
+const evtlog = createEvtlog({
   service: "my-api",
   ...envTransport(),
 });
@@ -144,7 +144,7 @@ const catalog = createCatalog({
 Override the environment explicitly:
 
 ```ts
-const catalog = createCatalog({
+const evtlog = createEvtlog({
   service: "my-api",
   ...envTransport("production"),
 });
@@ -158,14 +158,14 @@ import { envTransport } from "evtlog/env-transport";
 
 ## Redaction
 
-Catalog automatically redacts a comprehensive set of sensitive field names (case-insensitive, recursive):
+Evtlog automatically redacts a comprehensive set of sensitive field names (case-insensitive, recursive):
 
 `password`, `passwordHash`, `secret`, `apiKey`, `apiSecret`, `token`, `accessToken`, `refreshToken`, `idToken`, `ssn`, `taxId`, `passportNumber`, `driverLicense`, `phone`, `phoneNumber`, `mobile`, `email`, `emailAddress`, `accountNumber`, `routingNumber`, `iban`, `swift`, `cardNumber`, `cvv`, `cvc`, `expiryDate`, `pin`, `bvn`, `nin`, `bvnHash`, `ninHash`, `ip`, `ipAddress`, `userAgent`, `firstName`, `lastName`, `fullName`, `dateOfBirth`, `dob`, `address`, `location`, `otp`, `securityAnswer`
 
 Add extra fields with the `redact` option:
 
 ```ts
-const catalog = createCatalog({
+const evtlog = createEvtlog({
   service: "secure-app",
   redact: ["authorization", "x-api-key"],
 });
@@ -174,7 +174,7 @@ const catalog = createCatalog({
 For path-level control, use Pino's built-in `redactPaths`:
 
 ```ts
-const catalog = createCatalog({
+const evtlog = createEvtlog({
   service: "secure-app",
   redactPaths: ["user.ssn", "headers.authorization"],
 });
@@ -185,12 +185,12 @@ const catalog = createCatalog({
 Converts an `Error` into a plain object safe for API responses — strips stack traces:
 
 ```ts
-import { safeError, createCatalog } from "evtlog";
+import { safeError, createEvtlog } from "evtlog";
 
 try {
   await riskyOperation();
 } catch (err) {
-  catalog.error("operation.failed", safeError(err));
+  evtlog.error("operation.failed", safeError(err));
   return Response.json(safeError(err), { status: 500 });
 }
 ```
@@ -202,19 +202,19 @@ Output: `{ "message": "...", "name": "Error", "code": "ECONNREFUSED" }`
 Use the `mixin` option to inject request context into every log entry:
 
 ```ts
-const catalog = createCatalog({
+const evtlog = createEvtlog({
   service: "my-api",
   mixin: () => ({ requestId: crypto.randomUUID() }),
 });
 
 // Every log includes requestId
-catalog.info("request.started", { path: req.url });
+evtlog.info("request.started", { path: req.url });
 ```
 
 Child loggers inherit and extend the mixin:
 
 ```ts
-const child = catalog.child({ userId: "usr_42" });
+const child = evtlog.child({ userId: "usr_42" });
 child.info("user.action"); // includes both requestId and userId
 ```
 
@@ -223,9 +223,9 @@ child.info("user.action"); // includes both requestId and userId
 Use event-name conventions to build a consistent error taxonomy:
 
 ```ts
-catalog.error("db.connection_failed", { database: "users", error: safeError(err) });
-catalog.error("payment.declined", { provider: "stripe", reason: "insufficient_funds" });
-catalog.fatal("system.out_of_memory", { heapUsed: process.memoryUsage().heapUsed });
+evtlog.error("db.connection_failed", { database: "users", error: safeError(err) });
+evtlog.error("payment.declined", { provider: "stripe", reason: "insufficient_funds" });
+evtlog.fatal("system.out_of_memory", { heapUsed: process.memoryUsage().heapUsed });
 ```
 
 Framework adapters map HTTP status to log level automatically:
@@ -242,7 +242,7 @@ Framework adapters map HTTP status to log level automatically:
 
 ```ts
 import { auditLogger } from "evtlog/audit";
-const audit = auditLogger(catalog);
+const audit = auditLogger(evtlog);
 audit.log({
   action: "user.role_changed",
   actor: "admin@company.com",
@@ -257,7 +257,7 @@ audit.log({
 
 ```ts
 import { securityLogger } from "evtlog/security";
-const security = securityLogger(catalog);
+const security = securityLogger(evtlog);
 security.log({
   action: "login.failed",
   actor: "user@example.com",
@@ -271,7 +271,7 @@ security.log({
 
 ```ts
 import { webhookLogger } from "evtlog/webhook";
-const webhook = webhookLogger(catalog, {
+const webhook = webhookLogger(evtlog, {
   targets: [
     {
       url: "https://hooks.example.com/logs",
@@ -292,19 +292,19 @@ webhook.stop(); // flush remaining on shutdown
 
 ```ts
 import { otelBridge } from "evtlog/otel";
-const otelCatalog = otelBridge(catalog, {
+const otelEvtlog = otelBridge(evtlog, {
   api: trace, // from @opentelemetry/api
   captureSpanEvents: true,
 });
-otelCatalog.info("user.created", { userId: "usr_abc123" });
+otelEvtlog.info("user.created", { userId: "usr_abc123" });
 // Every log includes trace_id and span_id
 ```
 
 ### Log Sampling
 
 ```ts
-import { samplingCatalog } from "evtlog/sampling";
-const sampled = samplingCatalog(catalog, {
+import { samplingEvtlog } from "evtlog/sampling";
+const sampled = samplingEvtlog(evtlog, {
   rate: 0.1, // log 10% of events
   level: "debug",
 });
@@ -320,16 +320,16 @@ Each service forward logs to a central receiver using `evtlog/webhook`. The rece
 
 ```ts
 // Each microservice:
-import { createCatalog } from "evtlog";
+import { createEvtlog } from "evtlog";
 import { webhookLogger } from "evtlog/webhook";
 
-const catalog = createCatalog({
+const evtlog = createEvtlog({
   service: "user-service", // different name per service
   environment: "production",
   ...envTransport(),
 });
 
-const webhook = webhookLogger(catalog, {
+const webhook = webhookLogger(evtlog, {
   targets: [
     {
       url: "https://logs.internal:4000/ingest", // central receiver
@@ -350,7 +350,7 @@ Each service writes to a local file. A log shipper (Vector, Filebeat, Fluentd, o
 
 ```ts
 // Each service writes its own file:
-const catalog = createCatalog({
+const evtlog = createEvtlog({
   service: "payment-service", // identifies the source
   environment: "production",
   ...envTransport("production"), // → ./logs/production.log
@@ -368,7 +368,7 @@ Where `promtail.yml` tails `./logs/*.log` and adds `service` and `host` labels.
 
 ## Error Alerting
 
-Catalog does not include built-in alerting, but it provides the hooks to trigger alerts:
+Evtlog does not include built-in alerting, but it provides the hooks to trigger alerts:
 
 ### Via Webhook Forwarding
 
@@ -377,7 +377,7 @@ Use `evtlog/webhook` to send errors to any alert endpoint:
 ```ts
 import { webhookLogger } from "evtlog/webhook";
 
-const alerts = webhookLogger(catalog, {
+const alerts = webhookLogger(evtlog, {
   targets: [
     {
       url: "https://hooks.pagerduty.com/integration/...",
@@ -416,24 +416,24 @@ Level values: `10`=trace, `20`=debug, `30`=info, `40`=warn, `50`=error, `60`=fat
 
 ```ts
 import { requestIdMiddleware, httpLoggerMiddleware } from "evtlog/adapters/hono";
-app.use("*", requestIdMiddleware(catalog));
-app.use("*", httpLoggerMiddleware(catalog, { excludePaths: ["/health"] }));
+app.use("*", requestIdMiddleware(evtlog));
+app.use("*", httpLoggerMiddleware(evtlog, { excludePaths: ["/health"] }));
 ```
 
 ### Express
 
 ```ts
 import { requestIdMiddleware, httpLoggerMiddleware } from "evtlog/adapters/express";
-app.use(requestIdMiddleware(catalog));
-app.use(httpLoggerMiddleware(catalog));
+app.use(requestIdMiddleware(evtlog));
+app.use(httpLoggerMiddleware(evtlog));
 ```
 
 ### Fastify
 
 ```ts
 import { requestIdHook, httpLoggerHook } from "evtlog/adapters/fastify";
-fastify.addHook("onRequest", requestIdHook(catalog));
-fastify.addHook("onRequest", httpLoggerHook(catalog));
+fastify.addHook("onRequest", requestIdHook(evtlog));
+fastify.addHook("onRequest", httpLoggerHook(evtlog));
 ```
 
 ## Configuration Reference
@@ -455,13 +455,13 @@ fastify.addHook("onRequest", httpLoggerHook(catalog));
 All types are exported from the package root:
 
 ```ts
-import type { Catalog, CatalogOptions, LogLevel, TransportOptions, PinoDestination } from "evtlog";
+import type { Evtlog, EvtlogOptions, LogLevel, TransportOptions, PinoDestination } from "evtlog";
 ```
 
 | Type               | Description                                                    |
 | ------------------ | -------------------------------------------------------------- |
-| `Catalog`          | Logger instance returned by `createCatalog`.                   |
-| `CatalogOptions`   | Input options for `createCatalog`.                             |
+| `Evtlog`           | Logger instance returned by `createEvtlog`.                    |
+| `EvtlogOptions`    | Input options for `createEvtlog`.                              |
 | `LogLevel`         | `"trace" \| "debug" \| "info" \| "warn" \| "error" \| "fatal"` |
 | `TransportOptions` | `{ target: string; options?: Record<string, unknown> }`        |
 | `PinoDestination`  | `{ write: (data: string \| Uint8Array) => void }`              |
@@ -484,12 +484,12 @@ import type { FastifyRequestIdOptions } from "evtlog/adapters/fastify";
 
 | Path                      | Contents                           |
 | ------------------------- | ---------------------------------- |
-| `evtlog`                  | Main `createCatalog` + types       |
+| `evtlog`                  | Main `createEvtlog` + types        |
 | `evtlog/audit`            | `auditLogger` + `AuditEvent`       |
 | `evtlog/security`         | `securityLogger` + `SecurityEvent` |
 | `evtlog/webhook`          | `webhookLogger` + types            |
 | `evtlog/otel`             | `otelBridge` + types               |
-| `evtlog/sampling`         | `samplingCatalog` + types          |
+| `evtlog/sampling`         | `samplingEvtlog` + types           |
 | `evtlog/env-transport`    | `envTransport`                     |
 | `evtlog/adapters/hono`    | Hono middleware                    |
 | `evtlog/adapters/express` | Express middleware                 |

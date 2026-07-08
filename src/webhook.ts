@@ -1,4 +1,4 @@
-import type { Catalog, LogLevel } from "./index";
+import type { Evtlog, LogLevel } from "./index";
 
 export interface WebhookTarget {
   url: string;
@@ -36,7 +36,7 @@ async function signPayload(payload: string, secret: string): Promise<string> {
     .join("");
 }
 
-export function webhookLogger(catalog: Catalog, options: WebhookOptions) {
+export function webhookLogger(evtlog: Evtlog, options: WebhookOptions) {
   const { targets, batchIntervalMs = 5000, maxBatchSize = 50, retryCount = 2 } = options;
   const queues: Map<string, QueuedEvent[]> = new Map();
   const timers: Map<string, ReturnType<typeof setInterval>> = new Map();
@@ -82,7 +82,7 @@ export function webhookLogger(catalog: Catalog, options: WebhookOptions) {
       }
 
       if (!delivered) {
-        catalog.error("webhook.delivery_failed", {
+        evtlog.error("webhook.delivery_failed", {
           url: target.url,
           batchSize: batch.length,
         });

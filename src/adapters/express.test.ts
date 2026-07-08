@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { createCatalog } from "../index";
+import { createEvtlog } from "../index";
 import { requestIdMiddleware, httpLoggerMiddleware } from "./express";
 
 function mockReq() {
@@ -35,31 +35,31 @@ function mockRes() {
 }
 
 test("requestIdMiddleware sets requestId", () => {
-  const catalog = createCatalog({ service: "test" });
+  const evtlog = createEvtlog({ service: "test" });
   const req = mockReq();
   const res = mockRes();
-  requestIdMiddleware(catalog)(req as any, res as any, () => {});
+  requestIdMiddleware(evtlog)(req as any, res as any, () => {});
   expect((req as any).requestId).toBeDefined();
 });
 
 test("httpLoggerMiddleware skips excluded paths", () => {
-  const catalog = createCatalog({ service: "test" });
+  const evtlog = createEvtlog({ service: "test" });
   const req = mockReq();
   req.path = "/health";
   const res = mockRes();
   let called = false;
-  httpLoggerMiddleware(catalog)(req as any, res as any, () => {
+  httpLoggerMiddleware(evtlog)(req as any, res as any, () => {
     called = true;
   });
   expect(called).toBe(true);
 });
 
 test("httpLoggerMiddleware logs on finish", () => {
-  const catalog = createCatalog({ service: "test" });
+  const evtlog = createEvtlog({ service: "test" });
   const req = mockReq();
   const res = mockRes();
   let called = false;
-  httpLoggerMiddleware(catalog)(req as any, res as any, () => {
+  httpLoggerMiddleware(evtlog)(req as any, res as any, () => {
     called = true;
   });
   expect(called).toBe(true);

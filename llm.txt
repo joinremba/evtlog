@@ -10,15 +10,15 @@ bun run check — lint + format:check + typecheck + test
 bun run build — Build to dist/
 
 ## Key API
-createCatalog({ service, level, transport, redact, mixin, client, ... }) -> Catalog
-catalog.info("event.name", { data }) — Event-name-first logging
-catalog.child({ requestId }) — Child logger with bound context
-catalog.scope("module") — Module-scoped child logger (adds module field)
+createEvtlog({ service, level, transport, redact, mixin, client, ... }) -> Evtlog
+evtlog.info("event.name", { data }) — Event-name-first logging
+evtlog.child({ requestId }) — Child logger with bound context
+evtlog.scope("module") — Module-scoped child logger (adds module field)
 safeError(err) — Strip stack/ internals from Error for safe API responses
 
 ## Sub-modules (deep imports)
-evtlog/audit — auditLogger(catalog) with AuditEvent structure
-evtlog/security — securityLogger(catalog) with SecurityEvent and severity levels
+evtlog/audit — auditLogger(evtlog) with AuditEvent structure
+evtlog/security — securityLogger(evtlog) with SecurityEvent and severity levels
 evtlog/webhook — Batch log delivery to webhook endpoints with HMAC SHA-256 signing and retry
 evtlog/otel — OpenTelemetry bridge: injects trace_id/span_id, optional span events
 evtlog/sampling — Deterministic or custom log sampling to control volume

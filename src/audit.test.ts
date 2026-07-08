@@ -1,10 +1,10 @@
 import { expect, test } from "bun:test";
-import { createCatalog } from "./index";
+import { createEvtlog } from "./index";
 import { auditLogger } from "./audit";
 
 test("auditLogger logs audit event", () => {
-  const catalog = createCatalog({ service: "test" });
-  const audit = auditLogger(catalog);
+  const evtlog = createEvtlog({ service: "test" });
+  const audit = auditLogger(evtlog);
   expect(() =>
     audit.log({
       action: "user.deleted",
